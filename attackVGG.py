@@ -152,8 +152,8 @@ def main():
 
     # ======== load CIFAR10 data set 32 x 32  =============
     args.dataset = 'CIFAR10'
-    # args.model_name = args.dataset + '-VGG.pth'
-    args.model_name = args.dataset + '-VGG-adv.pth'
+    args.model_name = args.dataset + '-VGG.pth'
+    # args.model_name = args.dataset + '-VGG-adv.pth'
     transform = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
