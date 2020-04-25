@@ -1,6 +1,6 @@
 # vanilla-adversarial-training
 
-This repo provides the code for both **vanilla** training and **adversarial** training **VGG/ResNet** models on CIFAR10.
+This repo provides the code for both **vanilla** training and **adversarial** training **VGG/ResNet** models on CIFAR10 in PyTorch.
 
 ## File Descriptions
 
@@ -36,8 +36,8 @@ ResNet18-adv    |94.78|72.21 |56.90|48.67 |43.66|40.74 |38.94|77.50
 
 ## Usage
 
-We provide 4 trained models in `model` folder, including vanilla and adversarial training VGG and ResNet models, named as `CIFAR10-VGG.pth`, `CIFAR10-VGG-adv.pth`, `CIFAR10-ResNet18.pth` and `CIFAR10-ResNet18-adv.pth` respectively.
-Users can directly run the two attack scripts on command line to test the defence ability of models.
+We **provide 4 trained models** in `model` folder, including vanilla and adversarial training VGG and ResNet models, named as `CIFAR10-VGG.pth`, `CIFAR10-VGG-adv.pth`, `CIFAR10-ResNet18.pth` and `CIFAR10-ResNet18-adv.pth` respectively.
+Users can directly run the 2 attack scripts on command line to test the defence ability of models.
 The results should be similar with the values in the two tables above.
 Users should **specify** the target model in attack scripts by modifying the **args.model_name** parameter.
 ```
