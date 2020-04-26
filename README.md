@@ -6,9 +6,9 @@ This repo provides the code for both **vanilla** training and **adversarial** tr
 
 `vgg.py` & `ResNet.py`: model definitions
 
-`trainCIFAR10VGG.py` & `trainCIFAR10ResNet.py`: **vanilla training** VGG or ResNet models from scratch (no defence)
+`trainCIFAR10VGG.py` & `trainCIFAR10ResNet.py`: **vanilla training** VGG or ResNet models from scratch **[no defence]**
 
-`advTrainCIFAR10VGG.py` & `advTrainCIFAR10ResNet.py`: **adversarial training** VGG or ResNet models from scratch (**PGD-based**)
+`advTrainCIFAR10VGG.py` & `advTrainCIFAR10ResNet.py`: **adversarial training** VGG or ResNet models from scratch **[PGD-based]**
 
 `attackVGG.py` & `attackResNet.py`: attack the trained model using **FGSM** attack and **PGD** attack
 
@@ -39,19 +39,19 @@ ResNet18-adv    |94.78|72.21 |56.90|48.67 |43.66|40.74 |38.94|77.50
 We **provide 4 trained models** in `model` folder, including vanilla and adversarial training VGG and ResNet models, named as `CIFAR10-VGG.pth`, `CIFAR10-VGG-adv.pth`, `CIFAR10-ResNet18.pth` and `CIFAR10-ResNet18-adv.pth` respectively.
 Users can directly run the 2 attack scripts on command line to test the defence ability of models.
 The results should be similar with the values in the two tables above.
-Users should **specify** the target model in attack scripts by modifying the **args.model_name** parameter.
+Users should **manually specify** the target model in attack scripts by modifying the **args.model_name** parameter and change the CIFAR10 data folder.
 ```
-python attackVGG.py
-python attackResNet.py
+$ python attackVGG.py
+$ python attackResNet.py
 ```
 
 To reproduce the provided model, users can run the 4 training scripts on command line.
-**Pay attention to** the data folder and log folder parameters in training scripts and make appropriate modifications.
+Again **pay attention to** the data folder and log folder parameters in training scripts and make appropriate modifications.
 ```
-python trainCIFAR10VGG.py
-python advTrainCIFAR10VGG.py
-python trainCIFAR10ResNet.py
-python advTrainCIFAR10ResNet.py
+$ python trainCIFAR10VGG.py
+$ python advTrainCIFAR10VGG.py
+$ python trainCIFAR10ResNet.py
+$ python advTrainCIFAR10ResNet.py
 ```
 
-Welcome to fork and star this repo :)
+If u find the codes useful, welcome to fork and star this repo :)
