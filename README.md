@@ -19,20 +19,27 @@ This repo provides the code for both **vanilla** training and **adversarial** tr
 
 model       | training acc.(%) | test acc.(%)
 :-:         | :-:              | :-:
-VGG16_bn    | 99.994           | 93.05
-VGG16_bn-adv| 100              | 92.76
-ResNet18    | 100              | 95.37
-ResNet18-adv| 100              | 94.78
+VGG16_bn    | 100              | 93.18
+VGG16_bn-adv| 100              | 88.77
+ResNet18    | 100              | 95.42
+ResNet18-adv| 100              | 91.54
 
 2. **adversarial example** accuracy (%) (only test set)
-   - PGD attack settings: $bound\ \delta=0.031,\ step\ size\ \alpha=0.01,\ iterations=7$
+   - PGD attack settings: $bound\ \delta=0.031(8/255),\ step\ size\ \alpha=0.01,\ iterations=7$
 
-FGSM-$\epsilon$ | 0   | 0.05 | 0.1 | 0.15 | 0.2 | 0.25 | 0.3 | PGD  
- :-:            |:-:  | :-:  | :-: | :-:  | :-: | :-:  | :-: | :-:
-VGG16_bn        |93.05|41.23 |26.43|20.90 |18.09|16.22 |15.05|29.81
-VGG16_bn-adv    |92.67|68.01 |51.47|39.60 |32.06|27.14 |24.75|71.62
-ResNet18        |95.37|53.92 |43.63|37.59 |32.50|28.18 |24.75|25.27
-ResNet18-adv    |94.78|72.21 |56.90|48.67 |43.66|40.74 |38.94|77.50
+FGSM-$\epsilon$ | 0   | 0.05 | 0.1 | 0.15 | 0.2 | 0.25 | 0.3 | 0.35 | 0.4 
+ :-:            |:-:  | :-:  | :-: | :-:  | :-: | :-:  | :-: | :-:  | :-:
+VGG16_bn        |93.18| 15.48|12.25| 11.52|10.97|10.98 |11.18| 11.40|11.49
+VGG16_bn-adv    |88.77| 47.95|35.30| 31.56|28.43|25.46 |21.91| 18.71|16.20
+ResNet18        |95.42| 28.54|14.55| 11.21|10.54|10.55 |10.92| 11.27|11.40
+ResNet18-adv    |91.54| 46.86|36.77| 34.11|31.77|27.85 |23.17| 19.07|16.91
+
+PGD-$\delta$ | 0   | 1/255 | 2/255 | 3/255 | 4/255 | 5/255 | 6/255 | 7/255 | 8/255 | 9/255 | 10/255 | 11/255 | 12/255
+ :-:         |:-:  | :-:   | :-:   | :-:   | :-:   | :-:   | :-:   | :-:   | :-:   | :-:   | :-:    | :-:    | :-:
+VGG16_bn     |93.18| 57.44 | 19.88 | 4.40  | 1.00  | 0.23  | 0.05  | 0.06  | 0.02  | 0.03  | 0.01   | 0.01   | 0.01
+VGG16_bn-adv |88.77| 83.20 | 75.27 | 66.72 | 59.23 | 53.66 | 49.90 | 46.77 | 44.23 | 42.24 | 40.86  | 39.76  | 38.95
+ResNet18     |95.42| 57.66 | 19.41 | 5.37  | 1.73  | 0.63  | 0.22  | 0.12  | 0.07  | 0.03  | 0.02   | 0.05   | 0.04
+ResNet18-adv |91.54| 86.94 | 80.91 | 73.56 | 65.55 | 57.59 | 50.33 | 45.03 | 40.35 | 36.94 | 34.49  | 32.49  | 31.01
 
 ## Usage
 
@@ -53,5 +60,7 @@ $ python advTrainCIFAR10VGG.py
 $ python trainCIFAR10ResNet.py
 $ python advTrainCIFAR10ResNet.py
 ```
+
+**ATTENTION** The **mean-var normalization** preprocess is removed.
 
 If u find the codes useful, welcome to fork and star this repo :)
