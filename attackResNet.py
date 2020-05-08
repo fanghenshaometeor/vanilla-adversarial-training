@@ -49,35 +49,41 @@ def fgsm_attack(args, net, image, label, epsilon):
 
     # collect data grad    
     perturbed_image = image + epsilon*image.grad.data.sign()
-    # here we cannot clip the perturbed image into [0,1] 
-    # since the original image has been preprocessed by mean-var normalization,
-    # which results in that the pixel range is no longer [0,1].
-    # Therefore we clip the perturbed image into the new pixel range
-    # perturbed_image = torch.clamp(perturbed_image, 0, 1)
-    # print("original  image max value = %f; min value = %f."%(image.max(), image.min()))
-    # print("perturbed image max value = %f; min value = %f."%(perturbed_image.max(), perturbed_image.min()))
-    perturbed_image = torch.clamp(perturbed_image, image.min().data, image.max().data)
+    # clip the perturbed image into [0,1]
+    perturbed_image = torch.clamp(perturbed_image, 0, 1)
     return perturbed_image
 
 # -------- PGD attack --------
-def pgd_attack(args, net, image, label, eps, alpha=0.01, iters=7):
-    ori_image = image.data
-    min_val = image.min().data
-    max_val = image.max().data
-    for i in range(iters):
-        image.requires_grad = True
+def pgd_attack(args, net, image, label, eps, alpha=0.01, iters=7, random_start=True, d_min=0, d_max=1):
 
-        logits = net(image)
-        loss = F.cross_entropy(logits, label)
-        net.zero_grad()
-        loss.backward()
+    perturbed_image = image.clone()
+    perturbed_image.requires_grad = True
 
-        adv_image = image + alpha * image.grad.data.sign()
-        eta = torch.clamp(adv_image - ori_image, min=-eps, max=eps)
+    image_max = image + eps
+    image_min = image - eps
+    image_max.clamp_(d_min, d_max)
+    image_min.clamp_(d_min, d_max)
 
-        image = torch.clamp(ori_image + eta, min=min_val, max=max_val).detach_()
+    if random_start:
+        with torch.no_grad():
+            perturbed_image.data = image + perturbed_image.uniform_(-1*eps, eps)
+            perturbed_image.data.clamp_(d_min, d_max)
     
-    return image
+    for _ in range(iters):
+        logits = net(perturbed_image)
+        loss = F.cross_entropy(logits, label)
+        if perturbed_image.grad is not None:
+            perturbed_image.grad.data.zero_()
+        
+        loss.backward()
+        data_grad = perturbed_image.grad.data
+
+        with torch.no_grad():
+            perturbed_image.data += alpha * torch.sign(data_grad)
+            perturbed_image.data = torch.max(torch.min(perturbed_image, image_max), image_min)
+    perturbed_image.requires_grad = False
+    
+    return perturbed_image
 
 # -------- attack model --------
 def attack(args, net, testloader, epsilon, attackType):
@@ -153,8 +159,7 @@ def main():
     args.model_name = args.dataset + '-ResNet18.pth'
     # args.model_name = args.dataset + '-ResNet18-adv.pth'
     transform = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+        transforms.ToTensor()
     ])
     trainset = datasets.CIFAR10(root=args.data_folder, train=True, download=True, transform=transform)
     testset = datasets.CIFAR10(root=args.data_folder, train=False, download=True, transform=transform)
@@ -182,7 +187,7 @@ def main():
     print('Train acc. = %f; Test acc. = %f.' % (acc_tr, acc_te))
 
     print('-------- START FGSM ATTACK --------')
-    fgsm_epsilons = [.05, .1, .15, .2, .25, .3]
+    fgsm_epsilons =  [0.0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.4]
     print('---- EPSILONS: ', fgsm_epsilons)
     for eps in fgsm_epsilons:
         print('---- current eps = %.2f...'%eps)
@@ -191,11 +196,13 @@ def main():
         print('Attacked test acc. = %f.'%acc_te_fgsm)
 
     print('-------- START PGD ATTACK -------')
-    pgd_epsilon = 0.031         # 8/255=0.031
-    print('---- EPSILON = %f'%pgd_epsilon)
-    corr_te_pgd = attack(args, net, testloader, pgd_epsilon, "PGD")
-    acc_te_pgd = corr_te_pgd / float(test_num)
-    print('Attacked test acc. = %f.'%acc_te_pgd)
+    pgd_epsilons = [1/255, 2/255, 3/255, 4/255, 5/255, 6/255, 7/255, 8/255, 9/255, 10/255, 11/255, 12/255]
+    print('---- EPSILON: ', pgd_epsilons)
+    for eps in pgd_epsilons:
+        print('---- current eps = %.3f...'%eps)
+        corr_te_pgd = attack(args, net, testloader, eps, "PGD")
+        acc_te_pgd = corr_te_pgd / float(test_num)
+        print('Attacked test acc. = %f.'%acc_te_pgd)
 
     
  
