@@ -25,24 +25,36 @@ from ResNet import *
 torch.set_default_tensor_type(torch.FloatTensor)
 
 # -------- PGD attack --------
-def pgd_attack(args, net, image, label, eps, alpha=0.01, iters=7):
-    ori_image = image.data
-    min_val = image.min().data
-    max_val = image.max().data
-    for _ in range(iters):
-        image.requires_grad = True
+def pgd_attack(args, net, image, label, eps, alpha=0.01, iters=7, random_start=True, d_min=0, d_max=1):
 
-        logits = net(image)
-        loss = F.cross_entropy(logits, label)
-        net.zero_grad()
-        loss.backward()
+    perturbed_image = image.clone()
+    perturbed_image.requires_grad = True
 
-        adv_image = image + alpha * image.grad.data.sign()
-        eta = torch.clamp(adv_image - ori_image, min=-eps, max=eps)
+    image_max = image + eps
+    image_min = image - eps
+    image_max.clamp_(d_min, d_max)
+    image_min.clamp_(d_min, d_max)
 
-        image = torch.clamp(ori_image + eta, min=min_val, max=max_val).detach_()
+    if random_start:
+        with torch.no_grad():
+            perturbed_image.data = image + perturbed_image.uniform_(-1*eps, eps)
+            perturbed_image.data.clamp_(d_min, d_max)
     
-    return image
+    for _ in range(iters):
+        logits = net(perturbed_image)
+        loss = F.cross_entropy(logits, label)
+        if perturbed_image.grad is not None:
+            perturbed_image.grad.data.zero_()
+        
+        loss.backward()
+        data_grad = perturbed_image.grad.data
+
+        with torch.no_grad():
+            perturbed_image.data += alpha * torch.sign(data_grad)
+            perturbed_image.data = torch.max(torch.min(perturbed_image, image_max), image_min)
+    perturbed_image.requires_grad = False
+    
+    return perturbed_image
 
 
 # -------- training with both adversarial & clean examples 
@@ -179,12 +191,10 @@ def main():
     transform_train = transforms.Compose([
         transforms.RandomCrop(32, padding=4),
         transforms.RandomHorizontalFlip(),
-        transforms.ToTensor(),
-        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+        transforms.ToTensor()
     ])
     transform_test = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+        transforms.ToTensor()
     ])
     trainset = datasets.CIFAR10(root=args.data_folder, train=True, download=True, transform=transform_train)
     testset = datasets.CIFAR10(root=args.data_folder, train=False, download=True, transform=transform_test)
@@ -229,7 +239,8 @@ def main():
 
         # -------- save info
         losses_train = np.append(losses_train, loss_tr)
-        losses_test = np.append(losses_test, loss_tr)
+        losses_test = np.append(losses_test, loss_te)
+        losses_adv = np.append(losses_adv, loss_tr_adv)
         accs_train = np.append(accs_train, acc_tr)
         accs_test = np.append(accs_test, acc_te)
 
