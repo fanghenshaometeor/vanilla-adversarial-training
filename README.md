@@ -25,7 +25,8 @@ ResNet18    | 100              | 95.42
 ResNet18-adv| 100              | 91.54
 
 2. **adversarial example** accuracy (%) (only test set)
-   - PGD attack settings: $bound\ \delta=0.031(8/255),\ step\ size\ \alpha=0.01,\ iterations=7$
+   - For FGSM attack, we test the accuracies variation w.r.t. the step size $\epsilon$
+   - For PGD attack, we test the accuracies variation w.r.t. the bound $\delta$, with fixed $step\ size\ \alpha=0.01,\ iterations=7$.
 
 FGSM-$\epsilon$ | 0   | 0.05 | 0.1 | 0.15 | 0.2 | 0.25 | 0.3 | 0.35 | 0.4 
  :-:            |:-:  | :-:  | :-: | :-:  | :-: | :-:  | :-: | :-:  | :-:
