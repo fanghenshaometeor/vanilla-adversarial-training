@@ -46,21 +46,37 @@ ResNet18-adv |91.54| 86.94 | 80.91 | 73.56 | 65.55 | 57.59 | 50.33 | 45.03 | 40.
 
 ## Usage
 
+### attack
+
 We **provide 4 trained models** in `save` folder, including vanilla and adversarial training VGG and ResNet models, named as `CIFAR10-VGG.pth`, `CIFAR10-VGG-adv.pth`, `CIFAR10-ResNet18.pth` and `CIFAR10-ResNet18-adv.pth` respectively.
-Users can directly run the attack shell script on command line to test the defence ability of different models by specifying the `model_path` argument.
+Users can directly run the `attack.sh` shell script on command line to test the defence ability of different models.
 The results should be similar with the values in the two tables above.
-In addition, users can also manually change the attack parameters in the python script.
+In addition, users can manually change the attack parameters in the `attacker.py` python script for more results under different settings.
 ```
 $ sh attack.sh
 ```
+- `model` : Please specify the target model network architecture. `vgg16` or `resnet18` are optional.
+- `model_path` : Please specify the target model path. 
+- `dataset` & `data_dir` : Please specify the dataset name and path.
+- `gpu_id` : GPU device index.
 
-To reproduce the provided model, users can run the training shell scripts on command line.
-The `model` argument specifies the network.
-The `adv_train` argument specifies whether to use adversarial training.
+### training
+
+To reproduce the provided model, users can run the `train.sh` shell scripts on command line.
 ```
-$ shell train.sh
+$ sh train.sh
 ```
+- `model` : Please specify the target model network architecture. `vgg16` or `resnet18` are optional.
+- `dataset` & `data_dir` : Please specify the dataset name and path.
+- `model_dir` : Please specify where to save the trained model.
+- `log_dir` : Please specify where to save the log files.
+- `gpu_id` : GPU device index.
+- `adv_train` : Please specify whether to use adversarial training. `True` or `False`.
 
 **ATTENTION** The **mean-var normalization** preprocess is removed.
+
+## Dependencies
+- python 3.6 (miniconda)
+- PyTorch 1.4.0
 
 If u find the codes useful, welcome to fork and star this repo :)
