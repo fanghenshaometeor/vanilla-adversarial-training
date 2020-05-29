@@ -109,9 +109,3 @@ def ResNet101():
 
 def ResNet152():
     return ResNet(Bottleneck, [3,8,36,3])
-
-# if __name__ == "__main__":
-#     net = ResNet18()
-#     print(net)
-#     for name, param in net.named_parameters():
-#         print(name, param.size())

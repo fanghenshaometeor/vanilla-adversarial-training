@@ -61,25 +61,3 @@ def vgg16_bn():
 
 def vgg19_bn():
     return VGG(make_layers(cfg['E'], batch_norm=True))
-
-# if __name__ == "__main__":
-#     net = vgg16_bn()
-#     net.eval()
-#     print(net)
-
-#     for name, param in net.named_parameters():
-#         print(name, param.size())
-
-    # print("-------- feature extractor parameters --------")
-    # for name, param in net.features.named_parameters():
-    #     print(name, param.size())
-    
-    # print("-------- classifier parameters --------")
-    # for name, param in net.classifier.named_parameters():
-    #     print(name, param.size())
-
-    # print("-------- TEST --------")
-    # x = torch.randn(10,3,32,32)
-    # y = net(x)
-    # print("x shape = ", x.size())
-    # print("y shape = ", y.size())
