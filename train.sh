@@ -5,6 +5,8 @@ data_dir='/media/Disk1/KunFang/data/CIFAR10/'
 model_dir='./save/'
 log_dir='./log/'
 gpu_id=1
+adv_train=False
+#adv_train=True
 
 python train.py \
     --model ${model} \
@@ -12,4 +14,5 @@ python train.py \
     --data_dir ${data_dir}   \
     --model_dir ${model_dir} \
     --log_dir ${log_dir} \
-    --gpu_id ${gpu_id}
+    --gpu_id ${gpu_id} \
+    --adv_train ${adv_train}

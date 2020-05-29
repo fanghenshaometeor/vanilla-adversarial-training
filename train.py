@@ -13,11 +13,14 @@ import torch.utils.data as data
 import torch.optim as optim
 from torchvision import datasets, transforms
 
+import ast
+import copy
 import random
 import argparse
 import numpy as np
 
 from utils import *
+from attack import pgd_attack
 from model.vgg import *
 from model.resnet import *
 
@@ -39,6 +42,8 @@ parser.add_argument('--model',type=str,default='vgg16',help='model name')
 parser.add_argument('--batch_size',type=int,default=256,help='input batch size for training (default: 512)')    
 parser.add_argument('--epochs',type=int,default=200,metavar='EPOCH',help='number of epochs to train (default: 200)')
 parser.add_argument('--gpu_id',type=str,default='0',help='gpu device index')
+# -------- enable adversarial training --------
+parser.add_argument('--adv_train',type=ast.literal_eval,dest='adv_train',help='enable the adversarial training')
 args = parser.parse_args()
 
 # ======== GPU device ========
@@ -79,25 +84,30 @@ def main():
     else:
         print('UNSUPPORTED MODEL '+args.model)
         return
-    args.model_path = args.model_dir+args.dataset+'-'+args.model+'.pth'
+    if args.adv_train:
+        args.model_path = args.model_dir+args.dataset+'-'+args.model+'-adv.pth'
+    else:
+        args.model_path = args.model_dir+args.dataset+'-'+args.model+'.pth'
     print('-------- MODEL INFORMATION --------')
     print('---- model:      '+args.model)
+    print('---- adv. train: '+str(args.adv_train))
     print('---- saved path: '+args.model_path)
 
     # ======== set criterions & optimizers
     criterion = nn.CrossEntropyLoss()
     if args.model == 'vgg16':
-        args.epoch = 200
+        args.epochs = 200
         optimizer = optim.SGD(net.parameters(), lr=0.05, momentum=0.9, weight_decay=5e-4)
         scheduler = optim.lr_scheduler.MultiStepLR(optimizer, [60,120,160], gamma=0.1)
     elif args.model == 'resnet18':
-        args.epoch = 350
+        args.epochs = 350
         optimizer = optim.SGD(net.parameters(), lr=0.1, momentum=0.9, weight_decay=5e-4)
         scheduler = optim.lr_scheduler.MultiStepLR(optimizer,milestones=[150,250],gamma=0.1)        
 
     # ======== initialize variables
     losses_train = np.array([])
     losses_test = np.array([])
+    losses_adv = np.array([])
     accs_train = np.array([])
     accs_test = np.array([])
 
@@ -106,10 +116,10 @@ def main():
     for epoch in range(args.epochs):
 
         # -------- train
-        loss_tr, loss_te = train(args, net, trainloader, testloader, optimizer, criterion)
+        loss_tr, loss_te, loss_tr_adv = train(net, trainloader, testloader, optimizer, criterion)
 
         # -------- validation
-        corr_tr, corr_te = val(args, net, trainloader, testloader)
+        corr_tr, corr_te = val(net, trainloader, testloader)
         acc_tr = corr_tr / train_num
         acc_te = corr_te / test_num
 
@@ -120,20 +130,27 @@ def main():
         losses_test = np.append(losses_test, loss_tr)
         accs_train = np.append(accs_train, acc_tr)
         accs_test = np.append(accs_test, acc_te)
+        if args.adv_train:
+            losses_adv = np.append(losses_adv, loss_tr_adv)
 
         # -------- save model
         checkpoint = {'state_dict': net.state_dict()}
         torch.save(checkpoint, args.model_path)
 
-        print('Epoch %d: train loss = %f; test loss = %f; train acc. = %f; test acc. = %f.' % (epoch, loss_tr, loss_te, acc_tr, acc_te))
+        if args.adv_train:
+            print('Epoch %d: train loss = %f; test loss = %f; adv. train loss = %f; train acc. = %f; test acc. = %f.' % (epoch, loss_tr, loss_te, loss_tr_adv, acc_tr, acc_te))
+        else:
+            print('Epoch %d: train loss = %f; test loss = %f; train acc. = %f; test acc. = %f.' % (epoch, loss_tr, loss_te, acc_tr, acc_te))
     
     np.save(args.log_dir+'/'+'losses-train',losses_train)
     np.save(args.log_dir+'/'+'losses-test',losses_test)
     np.save(args.log_dir+'/'+'acc-train',accs_train)
     np.save(args.log_dir+'/'+'acc-test',accs_test)
+    if args.adv_train:
+        np.save(args.log_folder+'/'+'losses-adv',losses_adv)
 
 # ======== train  model ========
-def train(args, net, trainloader, testloader, optim, criterion):
+def train(net, trainloader, testloader, optim, criterion):
     
     net.train()
         
@@ -141,6 +158,8 @@ def train(args, net, trainloader, testloader, optim, criterion):
     avg_loss_tr = 0.0
     running_loss_te = 0.0
     avg_loss_te = 0.0
+    running_loss_tr_adv = 0.0
+    avg_loss_tr_adv = 0.0
 
     for batch_idx, (b_data, b_label) in enumerate(testloader):
         # -------- move to gpu
@@ -178,10 +197,27 @@ def train(args, net, trainloader, testloader, optim, criterion):
         loss.backward()
         optim.step()
 
-    return avg_loss_tr, avg_loss_te
+        if args.adv_train:
+            # -------- training with adversarial examples
+            net_copy = copy.deepcopy(net)
+            net_copy.eval()
+            perturbed_data = pgd_attack(net_copy, b_data, b_label, eps=0.013, alpha=0.01, iters=7)
+            logits_adv = net(perturbed_data)
+            loss_adv = criterion(logits_adv, b_label)
+
+            running_loss_tr_adv = running_loss_tr_adv + loss_adv.item()
+            if batch_idx == (len(trainloader)-1):
+                avg_loss_tr_adv = running_loss_tr_adv / len(trainloader)
+
+            # -------- backprop. & update again
+            optim.zero_grad()
+            loss_adv.backward()
+            optim.step()
+
+    return avg_loss_tr, avg_loss_te, avg_loss_tr_adv
 
 # ======== evaluate model ========
-def val(args, net, trainloader, testloader):
+def val(net, trainloader, testloader):
     
     net.eval()
     
