@@ -4,13 +4,15 @@ This repo provides the code for both **vanilla** training and **adversarial** tr
 
 ## File Descriptions
 
-`vgg.py` & `ResNet.py`: model definitions
+`train.py` & `train.sh` : training python and shell scripts
 
-`trainCIFAR10VGG.py` & `trainCIFAR10ResNet.py`: **vanilla training** VGG or ResNet models from scratch **[no defence]**
+`attack.py` & `attack.sh` : attacking python and shell scripts
 
-`advTrainCIFAR10VGG.py` & `advTrainCIFAR10ResNet.py`: **adversarial training** VGG or ResNet models from scratch **[PGD-based]**
+`attackers.py` : adversarial attack functions, including FGSM & PGD attacks
 
-`attackVGG.py` & `attackResNet.py`: attack the trained model using **FGSM** attack and **PGD** attack
+`utils.py` : help functions
+
+`model/` : model definitions
 
 
 ## Results
@@ -26,7 +28,7 @@ ResNet18-adv| 100              | 91.54
 
 2. **adversarial example** accuracy (%) (only test set)
    - For FGSM attack, we test the accuracies variation w.r.t. the step size $\epsilon$
-   - For PGD attack, we test the accuracies variation w.r.t. the bound $\delta$, with fixed $step\ size\ \alpha=0.01,\ iterations=7$.
+   - For PGD attack, we test the accuracies variation w.r.t. the $l_\infty$ bound $\delta$, with fixed $step\ size\ \alpha=0.01,\ iterations=7$.
 
 FGSM-$\epsilon$ | 0   | 0.05 | 0.1 | 0.15 | 0.2 | 0.25 | 0.3 | 0.35 | 0.4 
  :-:            |:-:  | :-:  | :-: | :-:  | :-: | :-:  | :-: | :-:  | :-:
@@ -44,22 +46,19 @@ ResNet18-adv |91.54| 86.94 | 80.91 | 73.56 | 65.55 | 57.59 | 50.33 | 45.03 | 40.
 
 ## Usage
 
-We **provide 4 trained models** in `model` folder, including vanilla and adversarial training VGG and ResNet models, named as `CIFAR10-VGG.pth`, `CIFAR10-VGG-adv.pth`, `CIFAR10-ResNet18.pth` and `CIFAR10-ResNet18-adv.pth` respectively.
-Users can directly run the 2 attack scripts on command line to test the defence ability of models.
+We **provide 4 trained models** in `save` folder, including vanilla and adversarial training VGG and ResNet models, named as `CIFAR10-VGG.pth`, `CIFAR10-VGG-adv.pth`, `CIFAR10-ResNet18.pth` and `CIFAR10-ResNet18-adv.pth` respectively.
+Users can directly run the attack shell script on command line to test the defence ability of different models by specifying the `model_path` argument.
 The results should be similar with the values in the two tables above.
-Users should **manually specify** the target model in attack scripts by modifying the **args.model_name** parameter and change the CIFAR10 data folder.
+In addition, users can also manually change the attack parameters in the python script.
 ```
-$ python attackVGG.py
-$ python attackResNet.py
+$ sh attack.sh
 ```
 
-To reproduce the provided model, users can run the 4 training scripts on command line.
-Again **pay attention to** the data folder and log folder parameters in training scripts and make appropriate modifications.
+To reproduce the provided model, users can run the training shell scripts on command line.
+The `model` argument specifies the network.
+The `adv_train` argument specifies whether to use adversarial training.
 ```
-$ python trainCIFAR10VGG.py
-$ python advTrainCIFAR10VGG.py
-$ python trainCIFAR10ResNet.py
-$ python advTrainCIFAR10ResNet.py
+$ shell train.sh
 ```
 
 **ATTENTION** The **mean-var normalization** preprocess is removed.

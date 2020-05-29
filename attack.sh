@@ -3,6 +3,9 @@ model=vgg16
 dataset=CIFAR10
 data_dir='/media/Disk1/KunFang/data/CIFAR10/'
 model_path='./save/CIFAR10-VGG.pth'
+# model_path='./save/CIFAR10-VGG-adv.pth'
+# model_path='./save/CIFAR10-ResNet18.pth'
+# model_path='./save/CIFAR10-Resnet18-adv.pth'
 gpu_id=1
 
 python attack.py \
