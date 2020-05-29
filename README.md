@@ -48,10 +48,10 @@ ResNet18-adv |91.54| 86.94 | 80.91 | 73.56 | 65.55 | 57.59 | 50.33 | 45.03 | 40.
 
 ### attack
 
-We **provide 4 trained models** in `save` folder, including vanilla and adversarial training VGG and ResNet models, named as `CIFAR10-VGG.pth`, `CIFAR10-VGG-adv.pth`, `CIFAR10-ResNet18.pth` and `CIFAR10-ResNet18-adv.pth` respectively.
+We **provide 4 trained models** in `save` folder, including vanilla and adversarial training VGG16 and ResNet18 models, named as `CIFAR10-VGG.pth`, `CIFAR10-VGG-adv.pth`, `CIFAR10-ResNet18.pth` and `CIFAR10-ResNet18-adv.pth` respectively.
 Users can directly run the `attack.sh` shell script on command line to test the defence ability of different models.
 The results should be similar with the values in the two tables above.
-In addition, users can manually change the attack parameters in the `attacker.py` python script for more results under different settings.
+In addition, users can manually change the attack parameters in the `attackers.py` python script for more results under different settings.
 ```
 $ sh attack.sh
 ```
