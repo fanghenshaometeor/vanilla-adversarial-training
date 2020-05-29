@@ -20,7 +20,7 @@ import argparse
 import numpy as np
 
 from utils import *
-from attack import pgd_attack
+from attackers import pgd_attack
 from model.vgg import *
 from model.resnet import *
 
