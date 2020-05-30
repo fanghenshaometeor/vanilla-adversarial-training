@@ -39,8 +39,8 @@ parser.add_argument('--log_dir',type=str,default='log/',help='file path for savi
 parser.add_argument('--dataset',type=str,default='CIFAR10',help='data set name')
 parser.add_argument('--model',type=str,default='vgg16',help='model name')
 # -------- training param. ----------
-parser.add_argument('--batch_size',type=int,default=256,help='input batch size for training (default: 512)')    
-parser.add_argument('--epochs',type=int,default=200,metavar='EPOCH',help='number of epochs to train (default: 200)')
+parser.add_argument('--batch_size',type=int,default=256,help='input batch size for training (default: 256)')    
+parser.add_argument('--epochs',type=int,default=200,help='number of epochs to train (default: 200)')
 parser.add_argument('--gpu_id',type=str,default='0',help='gpu device index')
 # -------- enable adversarial training --------
 parser.add_argument('--adv_train',type=ast.literal_eval,dest='adv_train',help='enable the adversarial training')
