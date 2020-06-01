@@ -21,8 +21,6 @@ import numpy as np
 
 from utils import *
 from attackers import pgd_attack
-from model.vgg import *
-from model.resnet import *
 
 # ======== fix data type ========
 torch.set_default_tensor_type(torch.FloatTensor)
@@ -52,7 +50,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu_id
 # -------- main function
 def main():
     
-    # ======== load CIFAR10 data set 32 x 32  =============
+    # ======== load data set 32 x 32  =============
     if args.dataset == 'CIFAR10':
         transform_train = transforms.Compose([
             transforms.RandomCrop(32, padding=4),
@@ -64,6 +62,17 @@ def main():
         ])
         trainset = datasets.CIFAR10(root=args.data_dir, train=True, download=True, transform=transform_train)
         testset = datasets.CIFAR10(root=args.data_dir, train=False, download=True, transform=transform_test)
+    elif args.dataset == 'STL10':
+        transform_train = transforms.Compose([
+            transforms.RandomCrop(96, padding=4),
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor()
+            ])
+        transform_test = transforms.Compose([
+            transforms.ToTensor(),
+            ])
+        trainset = datasets.STL10(root=args.data_dir, split='train', transform=transform_train, download=True)
+        testset = datasets.STL10(root=args.data_dir, split='test', transform=transform_test, download=True)  
     else:
         print('UNSUPPORTED DATASET '+args.dataset)
         return
@@ -78,9 +87,14 @@ def main():
 
     # ======== initialize net
     if args.model == 'vgg16':
+        from model.vgg import vgg16_bn
         net = vgg16_bn().cuda()
     elif args.model == 'resnet18':
+        from model.resnet import ResNet18
         net = ResNet18().cuda()
+    elif args.model == 'aaron':
+        from model.aaron import Aaron
+        net = Aaron().cuda()
     else:
         print('UNSUPPORTED MODEL '+args.model)
         return
@@ -102,8 +116,12 @@ def main():
     elif args.model == 'resnet18':
         args.epochs = 350
         optimizer = optim.SGD(net.parameters(), lr=0.1, momentum=0.9, weight_decay=5e-4)
-        scheduler = optim.lr_scheduler.MultiStepLR(optimizer,milestones=[150,250],gamma=0.1)        
-
+        scheduler = optim.lr_scheduler.MultiStepLR(optimizer,milestones=[150,250],gamma=0.1)
+    elif args.model == 'aaron':
+        args.epochs = 200 
+        optimizer = optim.SGD(net.parameters(), lr=0.05, momentum=0.9, weight_decay=5e-4)
+        scheduler = optim.lr_scheduler.MultiStepLR(optimizer, [60,120,160], gamma=0.1)
+    
     # ======== initialize variables
     losses_train = np.array([])
     losses_test = np.array([])

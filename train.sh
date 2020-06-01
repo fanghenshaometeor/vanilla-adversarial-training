@@ -1,7 +1,12 @@
 # model=vgg16
-model=resnet18
-dataset=CIFAR10
-data_dir='/media/Disk1/KunFang/data/CIFAR10/'
+# model=resnet18
+# dataset=CIFAR10
+# data_dir='/media/Disk1/KunFang/data/CIFAR10/'
+# -------
+model=aaron
+dataset=STL10
+data_dir='/media/Disk1/KunFang/data/STL10/'
+# -------
 model_dir='./save/'
 log_dir='./log/'
 gpu_id=1
