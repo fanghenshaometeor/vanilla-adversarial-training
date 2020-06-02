@@ -7,6 +7,7 @@
 # model_path='./save/CIFAR10-Resnet18-adv.pth'
 # dataset=CIFAR10
 # data_dir='/media/Disk1/KunFang/data/CIFAR10/'
+# -----------------------------------------------
 # --------- STL10-modelA ------------------------
 model=aaron
 # model_path='./save/STL10-aaron.pth'

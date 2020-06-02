@@ -1,16 +1,18 @@
-# ------- CIFAR10 + vgg16 / resnet18
+# --------- CIFAR10-vgg16/resnet18 --------------
 # model=vgg16
 # model=resnet18
 # dataset=CIFAR10
 # data_dir='/media/Disk1/KunFang/data/CIFAR10/'
-# ------- STL10 + modelA
+# -----------------------------------------------
+# --------- STL10-modelA ------------------------
 model=aaron
 dataset=STL10
 data_dir='/media/Disk1/KunFang/data/STL10/'
-# -------
+# -----------------------------------------------
 model_dir='./save/'
 log_dir='./log/'
 gpu_id=2
+# -----------------------------------------------
 # adv_train=False
 adv_train=True
 
