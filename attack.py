@@ -26,7 +26,7 @@ torch.set_default_tensor_type(torch.FloatTensor)
 setup_seed(666)
 
 # ======== options ==============
-parser = argparse.ArgumentParser(description='Attack Deep Neural Networks on CIFAR10')
+parser = argparse.ArgumentParser(description='Attack Deep Neural Networks')
 # -------- file param. --------------
 parser.add_argument('--data_dir',type=str,default='/media/Disk1/KunFang/data/CIFAR10/',help='file path for data')
 parser.add_argument('--model_dir',type=str,default='./save/',help='file path for saving model')

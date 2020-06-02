@@ -29,7 +29,7 @@ torch.set_default_tensor_type(torch.FloatTensor)
 setup_seed(666)
 
 # ======== options ==============
-parser = argparse.ArgumentParser(description='Training Deep Neural Networks on CIFAR10')
+parser = argparse.ArgumentParser(description='Training Deep Neural Networks')
 # -------- file param. --------------
 parser.add_argument('--data_dir',type=str,default='/media/Disk1/KunFang/data/CIFAR10/',help='file path for data')
 parser.add_argument('--model_dir',type=str,default='save/',help='file path for saving model')
@@ -37,7 +37,7 @@ parser.add_argument('--log_dir',type=str,default='log/',help='file path for savi
 parser.add_argument('--dataset',type=str,default='CIFAR10',help='data set name')
 parser.add_argument('--model',type=str,default='vgg16',help='model name')
 # -------- training param. ----------
-parser.add_argument('--batch_size',type=int,default=256,help='input batch size for training (default: 256)')    
+parser.add_argument('--batch_size',type=int,default=256,help='batch size for training (default: 256)')    
 parser.add_argument('--epochs',type=int,default=200,help='number of epochs to train (default: 200)')
 parser.add_argument('--gpu_id',type=str,default='0',help='gpu device index')
 # -------- enable adversarial training --------
@@ -75,8 +75,7 @@ def main():
         trainset = datasets.STL10(root=args.data_dir, split='train', transform=transform_train, download=True)
         testset = datasets.STL10(root=args.data_dir, split='test', transform=transform_test, download=True)
     else:
-        print('UNSUPPORTED DATASET '+args.dataset)
-        return
+        assert False, "Unknow dataset : {}".format(args.dataset)
     
     trainloader = data.DataLoader(trainset, batch_size=args.batch_size, shuffle=True)
     testloader = data.DataLoader(testset, batch_size=args.batch_size, shuffle=False)
@@ -97,8 +96,7 @@ def main():
         from model.aaron import Aaron
         net = Aaron().cuda()
     else:
-        print('UNSUPPORTED MODEL '+args.model)
-        return
+        assert False, "Unknow model : {}".format(args.model)
     if args.adv_train:
         args.model_path = args.model_dir+args.dataset+'-'+args.model+'-adv.pth'
     else:

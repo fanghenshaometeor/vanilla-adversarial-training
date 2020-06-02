@@ -19,7 +19,7 @@ adv_train=True
 python train.py \
     --model ${model} \
     --dataset ${dataset} \
-    --data_dir ${data_dir}   \
+    --data_dir ${data_dir} \
     --model_dir ${model_dir} \
     --log_dir ${log_dir} \
     --gpu_id ${gpu_id} \
