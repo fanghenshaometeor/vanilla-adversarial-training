@@ -32,10 +32,10 @@ parser.add_argument('--data_dir',type=str,default='/media/Disk1/KunFang/data/CIF
 parser.add_argument('--model_dir',type=str,default='./save/',help='file path for saving model')
 parser.add_argument('--log_dir',type=str,default='./log/',help='file path for saving log')
 parser.add_argument('--dataset',type=str,default='CIFAR10',help='data set name')
-parser.add_argument('--model',type=str,default='vgg16',help='model name')
-parser.add_argument('--model_path',type=str,default='./save/CIFAR10-VGG.pth',help='model path')
+parser.add_argument('--model',type=str,default='vgg16',help='model architecture name')
+parser.add_argument('--model_path',type=str,default='./save/CIFAR10-VGG.pth',help='saved model path')
 # -------- training param. ----------
-parser.add_argument('--batch_size',type=int,default=256,help='input batch size for training (default: 512)')
+parser.add_argument('--batch_size',type=int,default=256,help='batch size for training (default: 256)')
 parser.add_argument('--gpu_id',type=str,default='0',help='gpu device index')
 args = parser.parse_args()
 
@@ -56,12 +56,11 @@ def main():
     elif args.dataset == 'STL10':
         transform = transforms.Compose([
             transforms.ToTensor()
-            ])
+        ])
         trainset = datasets.STL10(root=args.data_dir, split='train', transform=transform, download=True)
         testset = datasets.STL10(root=args.data_dir, split='test', transform=transform, download=True)
     else:
-        print('UNSUPPORTED DATASET '+args.dataset)
-        return
+        assert False, "Unknow dataset : {}".format(args.dataset)
     trainloader = data.DataLoader(trainset, batch_size=args.batch_size, shuffle=False)
     testloader = data.DataLoader(testset, batch_size=args.batch_size, shuffle=False)
     train_num, test_num = len(trainset), len(testset)
@@ -82,8 +81,7 @@ def main():
         from model.aaron import Aaron
         net = Aaron().cuda()
     else:
-        print('UNSUPPORTED MODEL '+args.model)
-        return
+        assert False, "Unknow model : {}".format(args.model)
     net.load_state_dict(checkpoint['state_dict'])
     net.eval()
     print('-------- MODEL INFORMATION --------')
@@ -99,7 +97,7 @@ def main():
     fgsm_epsilons = [1/255, 2/255, 3/255, 4/255, 5/255, 6/255, 7/255, 8/255, 9/255, 10/255, 11/255, 12/255]
     print('---- EPSILONS: ', fgsm_epsilons)
     for eps in fgsm_epsilons:
-        print('---- current eps = %.2f...'%eps)
+        print('---- current eps = %.3f...'%eps)
         correct_te_fgsm = attack(net, testloader, eps, "FGSM")
         acc_te_fgsm = correct_te_fgsm / float(test_num)
         print('Attacked test acc. = %f.'%acc_te_fgsm)
@@ -154,7 +152,6 @@ def attack(net, testloader, epsilon, attackType):
 
     net.eval()
 
-    # loop all examples in test set
     for test in testloader:
         image, label = test
         image, label = image.cuda(), label.cuda()
