@@ -50,7 +50,8 @@ os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu_id
 # -------- main function
 def main():
     
-    # ======== load data set 32 x 32  =============
+    # ======== data set preprocess =============
+    # ======== mean-variance normalization is removed
     if args.dataset == 'CIFAR10':
         transform_train = transforms.Compose([
             transforms.RandomCrop(32, padding=4),
@@ -72,7 +73,7 @@ def main():
             transforms.ToTensor(),
             ])
         trainset = datasets.STL10(root=args.data_dir, split='train', transform=transform_train, download=True)
-        testset = datasets.STL10(root=args.data_dir, split='test', transform=transform_test, download=True)  
+        testset = datasets.STL10(root=args.data_dir, split='test', transform=transform_test, download=True)
     else:
         print('UNSUPPORTED DATASET '+args.dataset)
         return
