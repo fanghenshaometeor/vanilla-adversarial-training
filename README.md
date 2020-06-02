@@ -72,7 +72,7 @@ modelA-adv   |64.9375| 56.825|48.7375|40.1375|33.0875| 27.275|22.4375| 18.075| 1
 
 We **provide 6 trained models** in `save` folder, including vanilla and adversarial training vgg16/resnet18 on CIFAR10 and [modelA](https://github.com/aaron-xichen/pytorch-playground/blob/master/stl10/model.py) on STL10.
 Users can directly run the `attack.sh` shell script on command line to test the defence ability of different models.
-The results should be similar with the values in the 4 tables above.
+The results should be similar with the values in the 5 tables above.
 In addition, users can manually change the attack parameters in the `attackers.py` python script for more results under different settings.
 ```
 $ sh attack.sh
