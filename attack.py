@@ -18,8 +18,6 @@ import argparse
 
 from utils import *
 from attackers import *
-from model.vgg import *
-from model.resnet import *
 
 # ======== fix data type ========
 torch.set_default_tensor_type(torch.FloatTensor)
@@ -47,13 +45,20 @@ os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu_id
 # -------- main function
 def main():
     
-    # ======== load CIFAR10 data set 32 x 32  =============
+    # ======== data set preprocess =============
+    # ======== mean-variance normalization is removed
     if args.dataset == 'CIFAR10':
         transform = transforms.Compose([
             transforms.ToTensor()
         ])
         trainset = datasets.CIFAR10(root=args.data_dir, train=True, download=True, transform=transform)
         testset = datasets.CIFAR10(root=args.data_dir, train=False, download=True, transform=transform)
+    elif args.dataset == 'STL10':
+        transform = transforms.Compose([
+            transforms.ToTensor()
+            ])
+        trainset = datasets.STL10(root=args.data_dir, split='train', transform=transform, download=True)
+        testset = datasets.STL10(root=args.data_dir, split='test', transform=transform, download=True)
     else:
         print('UNSUPPORTED DATASET '+args.dataset)
         return
@@ -68,9 +73,14 @@ def main():
     # ======== load network ========
     checkpoint = torch.load(args.model_path, map_location=torch.device("cpu"))
     if args.model == 'vgg16':
+        from model.vgg import vgg16_bn
         net = vgg16_bn().cuda()
     elif args.model == 'resnet18':
+        from model.resnet import ResNet18
         net = ResNet18().cuda()
+    elif args.model == 'aaron':
+        from model.aaron import Aaron
+        net = Aaron().cuda()
     else:
         print('UNSUPPORTED MODEL '+args.model)
         return
@@ -86,7 +96,7 @@ def main():
     print('Train acc. = %f; Test acc. = %f.' % (acc_tr, acc_te))
 
     print('-------- START FGSM ATTACK --------')
-    fgsm_epsilons = [.05, .1, .15, .2, .25, .3, .35, .4]
+    fgsm_epsilons = [1/255, 2/255, 3/255, 4/255, 5/255, 6/255, 7/255, 8/255, 9/255, 10/255, 11/255, 12/255]
     print('---- EPSILONS: ', fgsm_epsilons)
     for eps in fgsm_epsilons:
         print('---- current eps = %.2f...'%eps)

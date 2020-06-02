@@ -166,7 +166,7 @@ def main():
     np.save(args.log_dir+'/'+'acc-train',accs_train)
     np.save(args.log_dir+'/'+'acc-test',accs_test)
     if args.adv_train:
-        np.save(args.log_folder+'/'+'losses-adv',losses_adv)
+        np.save(args.log_dir+'/'+'losses-adv',losses_adv)
 
 # ======== train  model ========
 def train(net, trainloader, testloader, optim, criterion):
