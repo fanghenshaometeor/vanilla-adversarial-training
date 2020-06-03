@@ -11,6 +11,8 @@ def fgsm_attack(net, image, label, epsilon):
     net.zero_grad()
     loss.backward()
 
+    print(image.grad.data.sign()[0,:,:,:])
+
     # collect data grad
     perturbed_image = image + epsilon*image.grad.data.sign()
     # clip the perturbed image into [0,1]

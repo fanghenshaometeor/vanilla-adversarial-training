@@ -14,6 +14,7 @@ import torch.utils.data as data
 import torch.optim as optim
 from torchvision import datasets, transforms
 
+import ast
 import argparse
 
 from utils import *
@@ -37,6 +38,8 @@ parser.add_argument('--model_path',type=str,default='./save/CIFAR10-VGG.pth',hel
 # -------- training param. ----------
 parser.add_argument('--batch_size',type=int,default=256,help='batch size for training (default: 256)')
 parser.add_argument('--gpu_id',type=str,default='0',help='gpu device index')
+# -------- save adv. images --------
+parser.add_argument('--save_adv_img',type=ast.literal_eval,dest='save_adv_img',help='save adversarial examples')
 args = parser.parse_args()
 
 # ======== GPU device ========
@@ -161,6 +164,10 @@ def attack(net, testloader, epsilon, attackType):
             perturbed_image = fgsm_attack(net, image, label, epsilon)
         elif attackType == "PGD":
             perturbed_image = pgd_attack(net, image, label, epsilon)
+
+        if args.save_adv_img:
+            adv_examples = perturbed_image[0:5,:,:,:].squeeze().detach().cpu().numpy()
+            np.save('./log/%s-%.3f-vgg-adv'%(attackType,epsilon), adv_examples)
 
         # re-classify
         logits = net(perturbed_image)
