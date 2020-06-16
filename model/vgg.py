@@ -6,6 +6,7 @@ Created on Mon Mar 23 2020
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 cfg = {
     'A' : [64,     'M', 128,      'M', 256, 256,           'M', 512, 512,           'M', 512, 512,           'M'],
