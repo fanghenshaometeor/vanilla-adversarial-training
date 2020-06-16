@@ -91,10 +91,45 @@ def main():
     print('---- model:      '+args.model)
     print('---- saved path: '+args.model_path)
 
+    """ change the parameters (x100) in the last linear layer """
+    print("-------- before change --------")
+    for name, param in net.named_parameters():
+        # print(name, param.size())
+        if name == 'classifier.0.weight':
+            print(param)
+            print("weight param. l_\infty norm = %f"%torch.norm(param,p=float('inf')))
+            print("weight param. l_1      norm = %f"%torch.norm(param,p=1))
+            print("weight param. l_2      norm = %f"%torch.norm(param,p=2))
+            checkpoint['state_dict'][name] = param * 100
+        if name == 'classifier.0.bias':
+            print(param)
+            print("bias param. l_\infty norm = %f"%torch.norm(param,p=float('inf')))
+            print("bias param. l_1      norm = %f"%torch.norm(param,p=1))
+            print("bias param. l_2      norm = %f"%torch.norm(param,p=2))
+            checkpoint['state_dict'][name] = param * 100
+    net.load_state_dict(checkpoint['state_dict'])
+    net.eval()
+    print("-------- after change --------")
+    for name, param in net.named_parameters():
+        if name == 'classifier.0.weight':
+            print(param)
+            print("weight param. l_\infty norm = %f"%torch.norm(param,p=float('inf')))
+            print("weight param. l_1      norm = %f"%torch.norm(param,p=1))
+            print("weight param. l_2      norm = %f"%torch.norm(param,p=2))
+        if name == 'classifier.0.bias':
+            print(param)
+            print("bias param. l_\infty norm = %f"%torch.norm(param,p=float('inf')))
+            print("bias param. l_1      norm = %f"%torch.norm(param,p=1))
+            print("bias param. l_2      norm = %f"%torch.norm(param,p=2))
+
+    """ """
+
     print('-------- START TESTING --------')
     corr_tr, corr_te = test(net, trainloader, testloader)
     acc_tr, acc_te = corr_tr / train_num, corr_te / test_num
     print('Train acc. = %f; Test acc. = %f.' % (acc_tr, acc_te))
+
+    return
 
     print('-------- START FGSM ATTACK --------')
     fgsm_epsilons = [1/255, 2/255, 3/255, 4/255, 5/255, 6/255, 7/255, 8/255, 9/255, 10/255, 11/255, 12/255]
@@ -113,6 +148,7 @@ def main():
         corr_te_pgd = attack(net, testloader, eps, "PGD")
         acc_te_pgd = corr_te_pgd / float(test_num)
         print('Attacked test acc. = %f.'%acc_te_pgd)
+    return
 
 # -------- test model ---------------
 def test(net, trainloader, testloader):

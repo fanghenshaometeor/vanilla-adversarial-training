@@ -15,8 +15,8 @@ data_dir='/media/Disk1/KunFang/data/CIFAR10/'
 # dataset=STL10
 # data_dir='/media/Disk1/KunFang/data/STL10/'
 # -----------------------------------------------
-gpu_id=2
-save_adv_img=True
+gpu_id=3
+save_adv_img=False
 
 python attack.py \
     --model ${model} \
