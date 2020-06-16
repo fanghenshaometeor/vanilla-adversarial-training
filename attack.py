@@ -136,30 +136,34 @@ def main():
     print('---- EPSILONS: ', fgsm_epsilons)
     for eps in fgsm_epsilons:
         print('---- current eps = %.3f...'%eps)
-        corr_te_fgsm, avg_perturbation_fgsm = attack(net, testloader, eps, "FGSM")
+        corr_te_fgsm, avg_perturbation_fgsm, avg_grad_sign_fgsm = attack(net, testloader, eps, "FGSM")
         acc_te_fgsm = corr_te_fgsm / float(test_num)
         avg_perturbation_fgsm["linf"] = avg_perturbation_fgsm["linf"] / float(test_num)
         avg_perturbation_fgsm["l1"] = avg_perturbation_fgsm["l1"] / float(test_num)
         avg_perturbation_fgsm["l2"] = avg_perturbation_fgsm["l2"] / float(test_num)
+        avg_grad_sign_fgsm = avg_grad_sign_fgsm / float(test_num)
         print('Attacked test acc. = %f.'%acc_te_fgsm)
         print('Average perturbation of linf = %f'%avg_perturbation_fgsm["linf"])
         print('Average perturbation of l1   = %f'%avg_perturbation_fgsm["l1"])
         print('Average perturbation of l2   = %f'%avg_perturbation_fgsm["l2"])
+        print('Average gradient sign sum = %f'%avg_grad_sign_fgsm)
 
     print('-------- START PGD ATTACK -------')
     pgd_epsilons = [1/255, 2/255, 3/255, 4/255, 5/255, 6/255, 7/255, 8/255, 9/255, 10/255, 11/255, 12/255]
     print('---- EPSILON: ', pgd_epsilons)
     for eps in pgd_epsilons:
         print('---- current eps = %.3f...'%eps)
-        corr_te_pgd, avg_perturbation_pgd = attack(net, testloader, eps, "PGD")
+        corr_te_pgd, avg_perturbation_pgd, avg_grad_sign_pgd = attack(net, testloader, eps, "PGD")
         acc_te_pgd = corr_te_pgd / float(test_num)
         avg_perturbation_pgd["linf"] = avg_perturbation_pgd["linf"] / float(test_num)
         avg_perturbation_pgd["l1"] = avg_perturbation_pgd["l1"] / float(test_num)
         avg_perturbation_pgd["l2"] = avg_perturbation_pgd["l2"] / float(test_num)
+        avg_grad_sign_pgd = avg_grad_sign_pgd / float(test_num)
         print('Attacked test acc. = %f.'%acc_te_pgd)
         print('Average perturbation of linf = %f'%avg_perturbation_pgd["linf"])
         print('Average perturbation of l1   = %f'%avg_perturbation_pgd["l1"])
         print('Average perturbation of l2   = %f'%avg_perturbation_pgd["l2"])
+        print('Average gradient sign sum = %f'%avg_grad_sign_pgd)
     return
 
 # -------- test model ---------------
@@ -209,15 +213,18 @@ def attack(net, testloader, epsilon, attackType):
     avg_perturbation["l1"] = 0
     avg_perturbation["l2"] = 0
 
+    # initialization average gradient sign
+    avg_grad_sign = 0
+
     for test in testloader:
         image, label = test
         image, label = image.cuda(), label.cuda()
 
         # generate adversarial examples
         if attackType == "FGSM":
-            perturbed_image = fgsm_attack(net, image, label, epsilon)
+            perturbed_image, batch_grad_sign_sum = fgsm_attack(net, image, label, epsilon)
         elif attackType == "PGD":
-            perturbed_image = pgd_attack(net, image, label, epsilon)
+            perturbed_image, batch_grad_sign_sum = pgd_attack(net, image, label, epsilon)
         
         """ compute average perturbation """
         # print((perturbed_image-image).size())
@@ -225,6 +232,10 @@ def attack(net, testloader, epsilon, attackType):
         avg_perturbation["linf"] = avg_perturbation["linf"] + torch.norm((perturbed_image-image).detach().cpu(), p=float('inf'), dim=(1,2,3)).sum()
         avg_perturbation["l1"]   = avg_perturbation["l1"]   + torch.norm((perturbed_image-image).detach().cpu(), p=1, dim=(1,2,3)).sum()
         avg_perturbation["l2"]   = avg_perturbation["l2"]   + torch.norm((perturbed_image-image).detach().cpu(), p=2, dim=(1,2,3)).sum()
+        """ """
+
+        """ compute average gradient sign """
+        avg_grad_sign = avg_grad_sign + batch_grad_sign_sum
         """ """
 
         if args.save_adv_img:
@@ -236,7 +247,7 @@ def attack(net, testloader, epsilon, attackType):
 
         _, final_pred = torch.max(logits.data, 1)
         correct = correct + (final_pred == label).sum().item() 
-    return correct, avg_perturbation
+    return correct, avg_perturbation, avg_grad_sign
 
 
 # -------- start point

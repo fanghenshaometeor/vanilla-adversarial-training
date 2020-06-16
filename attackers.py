@@ -11,13 +11,14 @@ def fgsm_attack(net, image, label, epsilon):
     net.zero_grad()
     loss.backward()
 
-    # print(image.grad.data.sign()[0,:,:,:])
+    # collect data grad sign sum
+    batch_grad_sign_sum = torch.sum(torch.abs(image.grad.data.sign()))
 
     # collect data grad
     perturbed_image = image + epsilon*image.grad.data.sign()
     # clip the perturbed image into [0,1]
     perturbed_image = torch.clamp(perturbed_image, 0, 1)
-    return perturbed_image
+    return perturbed_image, batch_grad_sign_sum
 
 # -------- PGD attack --------
 def pgd_attack(net, image, label, eps, alpha=0.01, iters=7, random_start=True, d_min=0, d_max=1):
@@ -29,6 +30,9 @@ def pgd_attack(net, image, label, eps, alpha=0.01, iters=7, random_start=True, d
     image_min = image - eps
     image_max.clamp_(d_min, d_max)
     image_min.clamp_(d_min, d_max)
+
+    # initialize average batch data gradient sign sum
+    avg_batch_grad_sign_sum = 0
 
     if random_start:
         with torch.no_grad():
@@ -44,9 +48,15 @@ def pgd_attack(net, image, label, eps, alpha=0.01, iters=7, random_start=True, d
         loss.backward()
         data_grad = perturbed_image.grad.data
 
+        # collect batch grad sign sum in each iteration
+        avg_batch_grad_sign_sum = avg_batch_grad_sign_sum + torch.sum(torch.abs(torch.sign(data_grad)))
+
         with torch.no_grad():
             perturbed_image.data += alpha * torch.sign(data_grad)
             perturbed_image.data = torch.max(torch.min(perturbed_image, image_max), image_min)
     perturbed_image.requires_grad = False
+
+    # compute average batch grad sign sum
+    avg_batch_grad_sign_sum = avg_batch_grad_sign_sum / iters
     
-    return perturbed_image
+    return perturbed_image, avg_batch_grad_sign_sum
