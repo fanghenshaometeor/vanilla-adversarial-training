@@ -92,35 +92,35 @@ def main():
     print('---- saved path: '+args.model_path)
 
     """ change the parameters (x100) in the last linear layer """
-    print("-------- before change --------")
-    for name, param in net.named_parameters():
-        # print(name, param.size())
-        if name == 'classifier.0.weight':
-            print(param)
-            print("weight param. l_\infty norm = %f"%torch.norm(param,p=float('inf')))
-            print("weight param. l_1      norm = %f"%torch.norm(param,p=1))
-            print("weight param. l_2      norm = %f"%torch.norm(param,p=2))
-            checkpoint['state_dict'][name] = param * 100
-        if name == 'classifier.0.bias':
-            print(param)
-            print("bias param. l_\infty norm = %f"%torch.norm(param,p=float('inf')))
-            print("bias param. l_1      norm = %f"%torch.norm(param,p=1))
-            print("bias param. l_2      norm = %f"%torch.norm(param,p=2))
-            checkpoint['state_dict'][name] = param * 100
-    net.load_state_dict(checkpoint['state_dict'])
-    net.eval()
-    print("-------- after change --------")
-    for name, param in net.named_parameters():
-        if name == 'classifier.0.weight':
-            print(param)
-            print("weight param. l_\infty norm = %f"%torch.norm(param,p=float('inf')))
-            print("weight param. l_1      norm = %f"%torch.norm(param,p=1))
-            print("weight param. l_2      norm = %f"%torch.norm(param,p=2))
-        if name == 'classifier.0.bias':
-            print(param)
-            print("bias param. l_\infty norm = %f"%torch.norm(param,p=float('inf')))
-            print("bias param. l_1      norm = %f"%torch.norm(param,p=1))
-            print("bias param. l_2      norm = %f"%torch.norm(param,p=2))
+    # print("-------- before change --------")
+    # for name, param in net.named_parameters():
+    #     # print(name, param.size())
+    #     if name == 'classifier.0.weight':
+    #         print(param)
+    #         print("weight param. l_\infty norm = %f"%torch.norm(param,p=float('inf')))
+    #         print("weight param. l_1      norm = %f"%torch.norm(param,p=1))
+    #         print("weight param. l_2      norm = %f"%torch.norm(param,p=2))
+    #         checkpoint['state_dict'][name] = param * 100
+    #     if name == 'classifier.0.bias':
+    #         print(param)
+    #         print("bias param. l_\infty norm = %f"%torch.norm(param,p=float('inf')))
+    #         print("bias param. l_1      norm = %f"%torch.norm(param,p=1))
+    #         print("bias param. l_2      norm = %f"%torch.norm(param,p=2))
+    #         checkpoint['state_dict'][name] = param * 100
+    # net.load_state_dict(checkpoint['state_dict'])
+    # net.eval()
+    # print("-------- after change --------")
+    # for name, param in net.named_parameters():
+    #     if name == 'classifier.0.weight':
+    #         print(param)
+    #         print("weight param. l_\infty norm = %f"%torch.norm(param,p=float('inf')))
+    #         print("weight param. l_1      norm = %f"%torch.norm(param,p=1))
+    #         print("weight param. l_2      norm = %f"%torch.norm(param,p=2))
+    #     if name == 'classifier.0.bias':
+    #         print(param)
+    #         print("bias param. l_\infty norm = %f"%torch.norm(param,p=float('inf')))
+    #         print("bias param. l_1      norm = %f"%torch.norm(param,p=1))
+    #         print("bias param. l_2      norm = %f"%torch.norm(param,p=2))
 
     """ """
 
