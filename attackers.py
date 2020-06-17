@@ -8,18 +8,21 @@ def fgsm_attack(net, image, label, epsilon):
 
     logits = net(image)
     loss = F.cross_entropy(logits, label)
+
+    # print("batch avg. loss = %f"%torch.mean(loss))
+
     net.zero_grad()
     loss.backward()
 
     # collect data grad sign sum
     batch_grad_sign_sum = torch.sum(torch.abs(image.grad.data.sign()))
 
-    # """ check perturbation """
+    """ check perturbation """
     # batch_eps_linf = torch.norm((epsilon*image.grad.data.sign()).detach().cpu(), p=float('inf'), dim=(1,2,3))
     # batch_sign_linf = torch.norm((image.grad.data.sign()).detach().cpu(), p=float('inf'), dim=(1,2,3)) # should be 1
     # print('batch eps  avg. linf epsilon = %f'%batch_eps_linf.mean())
     # print('batch sign avg. linf epsilon = %f'%batch_sign_linf.mean())
-    # """ """
+    """ """
 
     # collect data grad
     perturbed_image = image + epsilon*image.grad.data.sign()

@@ -182,6 +182,15 @@ def test(net, trainloader, testloader):
             images, labels = images.cuda(), labels.cuda()
             
             logits = net(images)
+
+            """ print several logits """
+            # print(logits[0,:])
+            # print(logits[1,:])
+            # print(logits[2,:])
+            # print(logits[3,:])
+            # print(logits[4,:])
+            """ """
+
             logits = logits.detach()
             _, predicted = torch.max(logits.data, 1)
             
