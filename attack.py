@@ -181,7 +181,7 @@ def test(net, trainloader, testloader):
             images, labels = test
             images, labels = images.cuda(), labels.cuda()
             
-            logits = net(images)
+            _, logits = net(images)
 
             """ print several logits """
             # print(logits[0,:])
@@ -200,7 +200,7 @@ def test(net, trainloader, testloader):
             images, labels = train
             images, labels = images.cuda(), labels.cuda()
             
-            logits = net(images)
+            _, logits = net(images)
             logits = logits.detach()
             _, predicted = torch.max(logits.data, 1)
             
@@ -252,7 +252,7 @@ def attack(net, testloader, epsilon, attackType):
             np.save('./log/%s-%.3f-vgg-adv'%(attackType,epsilon), adv_examples)
 
         # re-classify
-        logits = net(perturbed_image)
+        _, logits = net(perturbed_image)
 
         _, final_pred = torch.max(logits.data, 1)
         correct = correct + (final_pred == label).sum().item() 

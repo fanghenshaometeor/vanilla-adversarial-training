@@ -25,11 +25,15 @@ class VGG(nn.Module):
         )
 
     def forward(self, x):
-        output = self.features(x)
-        output = output.view(output.size()[0], -1)
-        output = self.classifier(output)
-    
-        return output
+        # output = self.features(x)
+        # output = output.view(output.size()[0], -1)
+        # output = self.classifier(output)
+        # return output
+
+        feature = self.features(x)
+        feature = feature.view(feature.size()[0], -1)
+        logits = self.classifier(feature)
+        return feature, logits
 
 def make_layers(cfg, batch_norm=False):
     layers = []

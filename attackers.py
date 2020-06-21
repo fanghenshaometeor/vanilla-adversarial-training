@@ -6,7 +6,7 @@ import torch.nn.functional as F
 def fgsm_attack(net, image, label, epsilon):
     image.requires_grad = True
 
-    logits = net(image)
+    _, logits = net(image)
     loss = F.cross_entropy(logits, label)
 
     # print("batch avg. loss = %f"%torch.mean(loss))
@@ -50,7 +50,7 @@ def pgd_attack(net, image, label, eps, alpha=0.01, iters=7, random_start=True, d
             perturbed_image.data.clamp_(d_min, d_max)
     
     for _ in range(iters):
-        logits = net(perturbed_image)
+        _, logits = net(perturbed_image)
         loss = F.cross_entropy(logits, label)
         if perturbed_image.grad is not None:
             perturbed_image.grad.data.zero_()
