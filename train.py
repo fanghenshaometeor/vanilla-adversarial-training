@@ -13,13 +13,14 @@ import torch.utils.data as data
 import torch.optim as optim
 from torchvision import datasets, transforms
 
+import os
 import ast
 import copy
 import random
 import argparse
 import numpy as np
 
-from utils import *
+from utils import setup_seed
 from attackers import pgd_attack
 
 # ======== fix data type ========
@@ -33,7 +34,6 @@ parser = argparse.ArgumentParser(description='Training Deep Neural Networks')
 # -------- file param. --------------
 parser.add_argument('--data_dir',type=str,default='/media/Disk1/KunFang/data/CIFAR10/',help='file path for data')
 parser.add_argument('--model_dir',type=str,default='save/',help='file path for saving model')
-parser.add_argument('--log_dir',type=str,default='log/',help='file path for saving log')
 parser.add_argument('--dataset',type=str,default='CIFAR10',help='data set name')
 parser.add_argument('--model',type=str,default='vgg16',help='model name')
 # -------- training param. ----------
@@ -86,15 +86,27 @@ def main():
     print('---- #test  : %d'%test_num)
 
     # ======== initialize net
-    if args.model == 'vgg16':
+    if args.model == 'vgg11':
+        from model.vgg import vgg11_bn
+        net = vgg11_bn().cuda()
+    elif args.model == 'vgg13':
+        from model.vgg import vgg13_bn
+        net = vgg13_bn().cuda()
+    elif args.model == 'vgg16':
         from model.vgg import vgg16_bn
         net = vgg16_bn().cuda()
+    elif args.model == 'vgg19':
+        from model.vgg import vgg19_bn
+        net = vgg19_bn().cuda()
     elif args.model == 'resnet18':
         from model.resnet import ResNet18
         net = ResNet18().cuda()
-    elif args.model == 'aaron':
-        from model.aaron import Aaron
-        net = Aaron().cuda()
+    elif args.model == 'resnet20':
+        from model.resnet_v1 import resnet20
+        net = resnet20().cuda()
+    elif args.model == 'modela':
+        from model.modela import ModelA
+        net = ModelA().cuda()
     else:
         assert False, "Unknow model : {}".format(args.model)
     if args.adv_train:
@@ -108,32 +120,25 @@ def main():
 
     # ======== set criterions & optimizers
     criterion = nn.CrossEntropyLoss()
-    if args.model == 'vgg16':
+    if args.model == 'vgg11' or args.model == 'vgg13' or args.model == 'vgg16' or args.model == 'vgg19':
         args.epochs = 200
         optimizer = optim.SGD(net.parameters(), lr=0.05, momentum=0.9, weight_decay=5e-4)
         scheduler = optim.lr_scheduler.MultiStepLR(optimizer, [60,120,160], gamma=0.1)
-    elif args.model == 'resnet18':
+    elif args.model == 'resnet18' or args.model == 'resnet20':
         args.epochs = 350
         optimizer = optim.SGD(net.parameters(), lr=0.1, momentum=0.9, weight_decay=5e-4)
         scheduler = optim.lr_scheduler.MultiStepLR(optimizer,milestones=[150,250],gamma=0.1)
-    elif args.model == 'aaron':
+    elif args.model == 'modela':
         args.epochs = 200 
         optimizer = optim.SGD(net.parameters(), lr=0.05, momentum=0.9, weight_decay=5e-4)
         scheduler = optim.lr_scheduler.MultiStepLR(optimizer, [60,120,160], gamma=0.1)
     
-    # ======== initialize variables
-    losses_train = np.array([])
-    losses_test = np.array([])
-    losses_adv = np.array([])
-    accs_train = np.array([])
-    accs_test = np.array([])
-
     print('-------- START TRAINING --------')
 
     for epoch in range(args.epochs):
 
         # -------- train
-        loss_tr, loss_te, loss_tr_adv = train(net, trainloader, testloader, optimizer, criterion)
+        loss_tr, loss_tr_adv = train(net, trainloader, testloader, optimizer, criterion)
 
         # -------- validation
         corr_tr, corr_te = val(net, trainloader, testloader)
@@ -142,29 +147,15 @@ def main():
 
         scheduler.step()
 
-        # -------- save info
-        losses_train = np.append(losses_train, loss_tr)
-        losses_test = np.append(losses_test, loss_tr)
-        accs_train = np.append(accs_train, acc_tr)
-        accs_test = np.append(accs_test, acc_te)
-        if args.adv_train:
-            losses_adv = np.append(losses_adv, loss_tr_adv)
-
         # -------- save model
         checkpoint = {'state_dict': net.state_dict()}
         torch.save(checkpoint, args.model_path)
 
         if args.adv_train:
-            print('Epoch %d: train loss = %f; test loss = %f; adv. train loss = %f; train acc. = %f; test acc. = %f.' % (epoch, loss_tr, loss_te, loss_tr_adv, acc_tr, acc_te))
+            print('Epoch %d: train loss = %f; adv. train loss = %f; train acc. = %f; test acc. = %f.' % (epoch, loss_tr, loss_tr_adv, acc_tr, acc_te))
         else:
-            print('Epoch %d: train loss = %f; test loss = %f; train acc. = %f; test acc. = %f.' % (epoch, loss_tr, loss_te, acc_tr, acc_te))
+            print('Epoch %d: train loss = %f; train acc. = %f; test acc. = %f.' % (epoch, loss_tr, acc_tr, acc_te))
     
-    np.save(args.log_dir+'/'+'losses-train',losses_train)
-    np.save(args.log_dir+'/'+'losses-test',losses_test)
-    np.save(args.log_dir+'/'+'acc-train',accs_train)
-    np.save(args.log_dir+'/'+'acc-test',accs_test)
-    if args.adv_train:
-        np.save(args.log_dir+'/'+'losses-adv',losses_adv)
 
 # ======== train  model ========
 def train(net, trainloader, testloader, optim, criterion):
@@ -173,24 +164,9 @@ def train(net, trainloader, testloader, optim, criterion):
         
     running_loss_tr = 0.0
     avg_loss_tr = 0.0
-    running_loss_te = 0.0
-    avg_loss_te = 0.0
     running_loss_tr_adv = 0.0
     avg_loss_tr_adv = 0.0
 
-    for batch_idx, (b_data, b_label) in enumerate(testloader):
-        # -------- move to gpu
-        b_data, b_label = b_data.cuda(), b_label.cuda()
-                      
-        # -------- feed noise to the network
-        logits = net(b_data)
-        
-        # -------- compute loss
-        loss = criterion(logits, b_label)
-        
-        running_loss_te = running_loss_te + loss.item()
-        if batch_idx == (len(testloader)-1):
-            avg_loss_te = running_loss_te / len(testloader)
     
     for batch_idx, (b_data, b_label) in enumerate(trainloader):
         
@@ -231,7 +207,7 @@ def train(net, trainloader, testloader, optim, criterion):
             loss_adv.backward()
             optim.step()
 
-    return avg_loss_tr, avg_loss_te, avg_loss_tr_adv
+    return avg_loss_tr, avg_loss_tr_adv
 
 # ======== evaluate model ========
 def val(net, trainloader, testloader):
