@@ -27,7 +27,7 @@
 # data_dir='/media/Disk1/KunFang/data/CIFAR10/'
 # -----------------------------------------------
 # --------- STL10-modelA ------------------------
-model=aaron
+model=modela
 # model_path='./save/STL10-modela.pth'
 model_path='./save/STL10-modela-adv.pth'
 dataset=STL10

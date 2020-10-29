@@ -89,7 +89,7 @@ def main():
     elif args.model == 'resnet20':
         from model.resnet_v1 import resnet20
         net = resnet20().cuda()
-    elif args.model == 'aaron':
+    elif args.model == 'modela':
         from model.modela import ModelA
         net = ModelA().cuda()
     else:
