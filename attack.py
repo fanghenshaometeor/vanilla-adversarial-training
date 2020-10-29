@@ -14,11 +14,12 @@ import torch.utils.data as data
 import torch.optim as optim
 from torchvision import datasets, transforms
 
+import os
 import ast
 import argparse
 
-from utils import *
-from attackers import *
+from utils import setup_seed
+from attackers import fgsm_attack, pgd_attack
 
 # ======== fix data type ========
 torch.set_default_tensor_type(torch.FloatTensor)
@@ -30,16 +31,12 @@ setup_seed(666)
 parser = argparse.ArgumentParser(description='Attack Deep Neural Networks')
 # -------- file param. --------------
 parser.add_argument('--data_dir',type=str,default='/media/Disk1/KunFang/data/CIFAR10/',help='file path for data')
-parser.add_argument('--model_dir',type=str,default='./save/',help='file path for saving model')
-parser.add_argument('--log_dir',type=str,default='./log/',help='file path for saving log')
 parser.add_argument('--dataset',type=str,default='CIFAR10',help='data set name')
 parser.add_argument('--model',type=str,default='vgg16',help='model architecture name')
 parser.add_argument('--model_path',type=str,default='./save/CIFAR10-VGG.pth',help='saved model path')
 # -------- training param. ----------
 parser.add_argument('--batch_size',type=int,default=256,help='batch size for training (default: 256)')
 parser.add_argument('--gpu_id',type=str,default='0',help='gpu device index')
-# -------- save adv. images --------
-parser.add_argument('--save_adv_img',type=ast.literal_eval,dest='save_adv_img',help='save adversarial examples')
 args = parser.parse_args()
 
 # ======== GPU device ========
@@ -74,15 +71,27 @@ def main():
 
     # ======== load network ========
     checkpoint = torch.load(args.model_path, map_location=torch.device("cpu"))
-    if args.model == 'vgg16':
+    if args.model == 'vgg11':
+        from model.vgg import vgg11_bn
+        net = vgg11_bn().cuda()
+    elif args.model == 'vgg13':
+        from model.vgg import vgg13_bn
+        net = vgg13_bn().cuda()
+    elif args.model == 'vgg16':
         from model.vgg import vgg16_bn
         net = vgg16_bn().cuda()
+    elif args.model == 'vgg19':
+        from model.vgg import vgg19_bn
+        net = vgg19_bn().cuda()
     elif args.model == 'resnet18':
         from model.resnet import ResNet18
         net = ResNet18().cuda()
+    elif args.model == 'resnet20':
+        from model.resnet_v1 import resnet20
+        net = resnet20().cuda()
     elif args.model == 'aaron':
-        from model.aaron import Aaron
-        net = Aaron().cuda()
+        from model.modela import ModelA
+        net = ModelA().cuda()
     else:
         assert False, "Unknow model : {}".format(args.model)
     net.load_state_dict(checkpoint['state_dict'])
@@ -164,10 +173,6 @@ def attack(net, testloader, epsilon, attackType):
             perturbed_image = fgsm_attack(net, image, label, epsilon)
         elif attackType == "PGD":
             perturbed_image = pgd_attack(net, image, label, epsilon)
-
-        if args.save_adv_img:
-            adv_examples = perturbed_image[0:5,:,:,:].squeeze().detach().cpu().numpy()
-            np.save('./log/%s-%.3f-vgg-adv'%(attackType,epsilon), adv_examples)
 
         # re-classify
         logits = net(perturbed_image)
