@@ -1,58 +1,77 @@
 # vanilla-adversarial-training
 
 This repo provides the PyTorch code for both **vanilla** training and **adversarial** training deep neural networks, including
-- **CIFAR10 + vgg16**
-- **CIFAR10 + resnet18**
+- **CIFAR10 + vgg11/vgg13/vgg16/vgg19/resnet18/resnet20**
 - **STL10 + [modelA](https://github.com/aaron-xichen/pytorch-playground/blob/master/stl10/model.py)**
 
 ## File Descriptions
 
-`train.py` & `train.sh` : training python and shell scripts
+`train.py,.sh` : training python and shell scripts
 
-`attack.py` & `attack.sh` : attack python and shell scripts
+`attack.py,.sh` : attack python and shell scripts
 
-`attackers.py` : adversarial attack functions, including FGSM & PGD attacks
+`model/` : model definitions directory
 
-`utils.py` : help functions
-
-`model/` : model definitions
-
-`save/` : saved model files
+`save/` : saved model files directory
 
 
 ## Results
 
 ### **clean sample** accuracy
 
-model                   | training acc.(%) | test acc.(%)
+dataset + model         | training acc.(%) | test acc.(%)
 :-:                     | :-:              | :-:
-CIFAR10 + vgg16         | 100              | 93.18
-CIFAR10 + vgg16-adv     | 100              | 88.77
-CIFAR10 + resnet18      | 100              | 95.42
-CIFAR10 + resnet18-adv  | 100              | 91.54
-STL10 + modelA          | 100              | 77.425
-STL10 + modelA-adv      | 100              | 72.9875
+CIFAR10 + vgg11         | 99.992           | 91.33
+CIFAR10 + vgg11-adv     | 100.00           | 87.04
+CIFAR10 + vgg13         | 99.998           | 93.19
+CIFAR10 + vgg13-adv     | 100.00           | 89.23
+CIFAR10 + vgg16         | 100.00           | 93.18
+CIFAR10 + vgg16-adv     | 100.00           | 88.77
+CIFAR10 + vgg19         | 99.998           | 92.86
+CIFAR10 + vgg19-adv     | 100.00           | 89.07
+CIFAR10 + resnet18      | 100.00           | 95.42
+CIFAR10 + resnet18-adv  | 100.00           | 91.54
+CIFAR10 + resnet20      | 99.964           | 91.71
+CIFAR10 + resnet20-adv  | 97.586           | 88.03
+STL10 + modelA          | 100.00           | 77.425
+STL10 + modelA-adv      | 100.00           | 72.9875
 
 ### **adversarial example** accuracy (%) (only test set)
    - For FGSM attack, we test the accuracies variation w.r.t. the step size $\epsilon$
    - For PGD attack, we test the accuracies variation w.r.t. the $l_\infty$ bound $\delta$, with fixed $step\ size\ \alpha=0.01,\ iterations=7$.
 
-**1. CIFAR10 + vgg16/resnet18**
+**1. CIFAR10 + vgg/resnet**
 
 FGSM-$\epsilon$ | 1/255 | 2/255 | 3/255 | 4/255 | 5/255 | 6/255 | 7/255 | 8/255 | 9/255 | 10/255 | 11/255 | 12/255
  :-:         | :-:   | :-:   | :-:   | :-:   | :-:   | :-:   | :-:   | :-:   | :-:   | :-:    | :-:    | :-:
+vgg11        | 69.35 | 52.80 | 42.23 | 34.68 | 29.40 | 25.22 | 22.31 | 19.59 | 17.89 | 16.44  | 15.27  | 14.43
+vgg11-adv    | 80.92 | 74.14 | 67.13 | 60.48 | 54.76 | 49.68 | 45.34 | 41.52 | 38.34 | 35.34  | 32.90  | 30.52
+vgg13        | 65.53 | 50.53 | 41.94 | 36.88 | 33.00 | 29.79 | 27.58 | 25.93 | 24.25 | 22.77  | 21.20  | 20.10
+vgg13-adv    | 83.37 | 77.16 | 71.23 | 65.65 | 60.72 | 56.32 | 52.20 | 48.67 | 45.94 | 43.31  | 41.11  | 39.14
 vgg16        | 64.71 | 46.83 | 36.35 | 30.16 | 26.12 | 23.30 | 21.21 | 19.52 | 18.34 | 17.48  | 16.56  | 15.91
 vgg16-adv    | 83.46 | 76.96 | 71.03 | 66.79 | 63.38 | 60.65 | 58.62 | 56.51 | 54.61 | 52.78  | 51.02  | 49.22
+vgg19        | 62.89 | 40.82 | 28.41 | 21.15 | 16.51 | 13.61 | 11.65 | 10.35 | 9.52  | 9.08   | 8.67   | 8.42
+vgg19-adv    | 83.05 | 76.94 | 71.25 | 67.06 | 63.47 | 60.46 | 57.63 | 55.25 | 53.21 | 51.03  | 48.88  | 47.03
 resnet18     | 69.29 | 56.99 | 50.82 | 47.02 | 43.63 | 41.13 | 38.92 | 36.95 | 34.94 | 33.03  | 31.36  | 29.69
 resnet18-adv | 87.08 | 81.94 | 76.80 | 71.56 | 67.16 | 63.01 | 59.52 | 56.50 | 53.80 | 51.47  | 49.68  | 48.11
+resnet20     | 42.07 | 26.11 | 20.24 | 17.60 | 15.79 | 14.44 | 13.96 | 13.36 | 13.16 | 13.07  | 12.82  | 12.55
+resnet20-adv | 81.78 | 74.94 | 67.59 | 60.25 | 52.85 | 46.17 | 40.28 | 35.06 | 30.14 | 26.40  | 23.17  | 20.41
 
 
 PGD-$\delta$ | 1/255 | 2/255 | 3/255 | 4/255 | 5/255 | 6/255 | 7/255 | 8/255 | 9/255 | 10/255 | 11/255 | 12/255
  :-:         | :-:   | :-:   | :-:   | :-:   | :-:   | :-:   | :-:   | :-:   | :-:   | :-:    | :-:    | :-:
+vgg11        | 65.35 | 32.92 | 12.82 | 5.09  | 2.08  | 1.09  | 0.54  | 0.36  | 0.22  | 0.12   | 0.08   | 0.07
+vgg11-adv    | 80.67 | 72.54 | 62.75 | 53.46 | 44.22 | 36.47 | 30.24 | 25.81 | 22.26 | 19.71  | 17.86  | 16.29
+vgg13        | 57.65 | 21.18 | 5.86  | 1.84  | 0.71  | 0.35  | 0.16  | 0.09  | 0.06  | 0.04   | 0.07   | 0.02
+vgg13-adv    | 83.10 | 75.77 | 67.48 | 58.38 | 49.28 | 42.34 | 37.02 | 32.48 | 29.05 | 26.19  | 24.35  | 22.68
 vgg16        | 57.44 | 19.88 | 4.40  | 1.00  | 0.23  | 0.05  | 0.06  | 0.02  | 0.03  | 0.01   | 0.01   | 0.01
 vgg16-adv    | 83.20 | 75.27 | 66.72 | 59.23 | 53.66 | 49.90 | 46.77 | 44.23 | 42.24 | 40.86  | 39.76  | 38.95
-resnet18     | 57.66 | 19.41 | 5.37  | 1.73  | 0.63  | 0.22  | 0.12  | 0.07  | 0.03  | 0.02   | 0.05   | 0.04
-resnet18-adv | 86.94 | 80.91 | 73.56 | 65.55 | 57.59 | 50.33 | 45.03 | 40.35 | 36.94 | 34.49  | 32.49  | 31.01
+vgg19        | 57.42 | 19.16 | 3.67  | 0.76  | 0.17  | 0.09  | 0.02  | 0.00  | 0.01  | 0.01   | 0.00   | 0.00
+vgg19-adv    | 82.78 | 75.23 | 66.78 | 58.06 | 51.36 | 45.97 | 42.18 | 39.30 | 36.42 | 34.13  | 32.63  | 31.30
+resnet18     | 57.74 | 19.48 | 5.58  | 1.85  | 0.52  | 0.21  | 0.18  | 0.08  | 0.03  | 0.03   | 0.03   | 0.03
+resnet18-adv | 86.94 | 80.94 | 73.53 | 65.53 | 57.51 | 50.40 | 44.96 | 40.42 | 37.04 | 34.36  | 32.44  | 30.74
+resnet20     | 37.68 | 5.98  | 0.46  | 0.00  | 0.00  | 0.00  | 0.00  | 0.00  | 0.00  | 0.00   | 0.00   | 0.00
+resnet20-adv | 81.62 | 73.67 | 64.14 | 54.08 | 43.86 | 35.50 | 28.33 | 22.26 | 17.66 | 14.28  | 11.62  | 9.83
 
 **2. STL10 + modelA**
 
@@ -70,14 +89,14 @@ modelA-adv   |64.9375| 56.825|48.7375|40.1375|33.0875| 27.275|22.4375| 18.075| 1
 
 ### attack
 
-We **provide 6 trained models** in `save` folder, including vanilla and adversarial training vgg16/resnet18 on CIFAR10 and [modelA](https://github.com/aaron-xichen/pytorch-playground/blob/master/stl10/model.py) on STL10.
-Users can directly run the `attack.sh` shell script on command line to test the defence ability of different models.
+We **provide trained models** in `save` folder, including vanilla and adversarial training vgg/resnet on CIFAR10 and [modelA](https://github.com/aaron-xichen/pytorch-playground/blob/master/stl10/model.py) on STL10.
+Users can directly run the `attack.sh` shell script on command line to check the robustness of these models.
 The results should be similar with the values in the 5 tables above.
 In addition, users can manually change the attack parameters in the `attackers.py` python script for more results under different settings.
 ```
 $ sh attack.sh
 ```
-- `model` : Please specify the target model network architecture. `vgg16`, `resnet18` or `aaron` are optional.
+- `model` : Please specify the target model network architecture.
 - `model_path` : Please specify the target model path.
 - `dataset` & `data_dir` : Please specify the dataset name and path.
 - `gpu_id` : GPU device index.
@@ -103,6 +122,8 @@ $ sh train.sh
 
 ## Dependencies
 - python 3.6 (miniconda)
-- PyTorch 1.4.0
+- PyTorch 1.5.0
+
+## 
 
 If u find the codes useful, welcome to fork and star this repo :)
