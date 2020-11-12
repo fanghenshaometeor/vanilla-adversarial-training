@@ -42,6 +42,7 @@ parser.add_argument('--epochs',type=int,default=200,help='number of epochs to tr
 parser.add_argument('--gpu_id',type=str,default='0',help='gpu device index')
 # -------- enable adversarial training --------
 parser.add_argument('--adv_train',type=ast.literal_eval,dest='adv_train',help='enable the adversarial training')
+parser.add_argument('--num_classes',type=int,default=10,help='number of classes')
 args = parser.parse_args()
 
 # ======== GPU device ========
@@ -63,6 +64,18 @@ def main():
         ])
         trainset = datasets.CIFAR10(root=args.data_dir, train=True, download=True, transform=transform_train)
         testset = datasets.CIFAR10(root=args.data_dir, train=False, download=True, transform=transform_test)
+    elif args.dataset == 'CIFAR100':
+        args.num_classes = 100
+        transform_train = transforms.Compose([
+            transforms.RandomCrop(32, padding=4),
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor()
+        ])
+        transform_test = transforms.Compose([
+            transforms.ToTensor()
+        ])
+        trainset = datasets.CIFAR100(root=args.data_dir, train=True, download=True, transform=transform_train)
+        testset = datasets.CIFAR100(root=args.data_dir, train=False, download=True, transform=transform_test)
     elif args.dataset == 'STL10':
         transform_train = transforms.Compose([
             transforms.RandomCrop(96, padding=4),
@@ -94,7 +107,7 @@ def main():
         net = vgg13_bn().cuda()
     elif args.model == 'vgg16':
         from model.vgg import vgg16_bn
-        net = vgg16_bn().cuda()
+        net = vgg16_bn(num_classes=args.num_classes).cuda()
     elif args.model == 'vgg19':
         from model.vgg import vgg19_bn
         net = vgg19_bn().cuda()
@@ -103,7 +116,7 @@ def main():
         net = ResNet18().cuda()
     elif args.model == 'resnet20':
         from model.resnet_v1 import resnet20
-        net = resnet20().cuda()
+        net = resnet20(num_classes=args.num_classes).cuda()
     elif args.model == 'modela':
         from model.modela import ModelA
         net = ModelA().cuda()
