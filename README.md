@@ -2,6 +2,7 @@
 
 This repo provides the PyTorch code for both **vanilla** training and **adversarial** training deep neural networks, including
 - **CIFAR10 + vgg11/vgg13/vgg16/vgg19/resnet18/resnet20**
+- **CIFAR100 + vgg16/resnet20**
 - **STL10 + [modelA](https://github.com/aaron-xichen/pytorch-playground/blob/master/stl10/model.py)**
 
 ## File Descriptions
@@ -33,6 +34,10 @@ CIFAR10 + resnet18      | 100.00           | 95.42
 CIFAR10 + resnet18-adv  | 100.00           | 91.54
 CIFAR10 + resnet20      | 99.964           | 91.71
 CIFAR10 + resnet20-adv  | 97.586           | 88.03
+CIFAR100 + vgg16        | 99.97            | 72.45
+CIFAR100 + vgg16-adv    | 99.96            | 62.62
+CIFAR100 + resnet20     | 93.926           | 67.31
+CIFAR100 + resnet20-adv | 76.872           | 61.94
 STL10 + modelA          | 100.00           | 77.425
 STL10 + modelA-adv      | 100.00           | 72.9875
 
@@ -73,7 +78,23 @@ resnet18-adv | 86.94 | 80.94 | 73.53 | 65.53 | 57.51 | 50.40 | 44.96 | 40.42 | 3
 resnet20     | 37.68 | 5.98  | 0.46  | 0.00  | 0.00  | 0.00  | 0.00  | 0.00  | 0.00  | 0.00   | 0.00   | 0.00
 resnet20-adv | 81.62 | 73.67 | 64.14 | 54.08 | 43.86 | 35.50 | 28.33 | 22.26 | 17.66 | 14.28  | 11.62  | 9.83
 
-**2. STL10 + modelA**
+**2. CIFAR100 + vgg/resnet**
+
+FGSM-$\epsilon$ | 1/255 | 2/255 | 3/255 | 4/255 | 5/255 | 6/255 | 7/255 | 8/255 | 9/255 | 10/255 | 11/255 | 12/255
+ :-:         | :-:   | :-:   | :-:   | :-:   | :-:   | :-:   | :-:   | :-:   | :-:   | :-:    | :-:    | :-:
+vgg16        | 36.11 | 27.90 | 24.56 | 22.39 | 20.49 | 18.88 | 17.26 | 16.09 | 14.88 | 13.82  | 12.79  | 11.71
+vgg16-adv    | 54.13 | 46.73 | 40.67 | 35.47 | 31.36 | 27.91 | 25.15 | 22.80 | 20.88 | 19.22  | 17.95  | 16.80
+resnet20     | 12.64 | 7.60  | 6.75  | 6.19  | 5.78  | 5.55  | 5.54  | 5.36  | 5.10  | 4.83   | 4.64   | 4.63
+resnet20-adv | 53.00 | 44.12 | 37.21 | 31.08 | 25.58 | 21.26 | 17.86 | 14.94 | 12.51 | 10.34  | 8.87   | 7.74
+
+PGD-$\delta$ | 1/255 | 2/255 | 3/255 | 4/255 | 5/255 | 6/255 | 7/255 | 8/255 | 9/255 | 10/255 | 11/255 | 12/255
+ :-:         | :-:   | :-:   | :-:   | :-:   | :-:   | :-:   | :-:   | :-:   | :-:   | :-:    | :-:    | :-:
+vgg16        | 28.56 | 9.81  | 3.94  | 1.71  | 0.94  | 0.47  | 0.32  | 0.18  | 0.15  | 0.06   | 0.12   | 0.03
+vgg16-adv    | 53.67 | 45.02 | 36.87 | 30.08 | 24.04 | 19.60 | 16.26 | 13.90 | 11.92 | 10.57  | 9.71   | 8.98
+resnet20     | 11.15 | 1.63  | 0.13  | 0.01  | 0.03  | 0.01  | 0.01  | 0.00  | 0.00  | 0.00   | 0.00   | 0.00
+resnet20-adv | 52.84 | 42.93 | 34.23 | 25.93 | 19.80 | 14.79 | 11.15 | 8.39  | 6.36  | 5.09   | 4.12   | 3.35
+
+**3. STL10 + modelA**
 
 FGSM-$\epsilon$ | 1/255 | 2/255 | 3/255 | 4/255 | 5/255 | 6/255 | 7/255 | 8/255 | 9/255 | 10/255 | 11/255 | 12/255
  :-:            | :-:   | :-:   | :-:   | :-:   | :-:   | :-:   | :-:   | :-:   | :-:   | :-:    | :-:    | :-:
@@ -110,7 +131,6 @@ $ sh train.sh
 - `model` : Please specify the target model network architecture. `vgg16`, `resnet18` or `aaron` are optional.
 - `dataset` & `data_dir` : Please specify the dataset name and path.
 - `model_dir` : Please specify where to save the trained model.
-- `log_dir` : Please specify where to save the log files.
 - `gpu_id` : GPU device index.
 - `adv_train` : Please specify whether to use adversarial training. `True` or `False`.
 
