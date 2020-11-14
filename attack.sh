@@ -26,12 +26,23 @@
 # dataset=CIFAR10
 # data_dir='/media/Disk1/KunFang/data/CIFAR10/'
 # -----------------------------------------------
+# --------- CIFAR100-vgg16/resnet20 -------------
+# model=vgg16
+# model_path='./save/CIFAR100-vgg16.pth'
+# model_path='./save/CIFAR100-vgg16-adv.pth'
+# --------
+model=resnet20
+# model_path='./save/CIFAR100-resnet20.pth'
+model_path='./save/CIFAR100-resnet20-adv.pth'
+# --------
+dataset=CIFAR100
+data_dir='/media/Disk1/KunFang/data/CIFAR100/'
 # --------- STL10-modelA ------------------------
-model=modela
+# model=modela
 # model_path='./save/STL10-modela.pth'
-model_path='./save/STL10-modela-adv.pth'
-dataset=STL10
-data_dir='/media/Disk1/KunFang/data/STL10/'
+# model_path='./save/STL10-modela-adv.pth'
+# dataset=STL10
+# data_dir='/media/Disk1/KunFang/data/STL10/'
 # -----------------------------------------------
 gpu_id=1
 

@@ -35,6 +35,7 @@ parser.add_argument('--dataset',type=str,default='CIFAR10',help='data set name')
 parser.add_argument('--model',type=str,default='vgg16',help='model architecture name')
 parser.add_argument('--model_path',type=str,default='./save/CIFAR10-VGG.pth',help='saved model path')
 # -------- training param. ----------
+parser.add_argument('--num_classes',type=int,default=10,help='number of classes')
 parser.add_argument('--batch_size',type=int,default=256,help='batch size for training (default: 256)')
 parser.add_argument('--gpu_id',type=str,default='0',help='gpu device index')
 args = parser.parse_args()
@@ -53,6 +54,13 @@ def main():
         ])
         trainset = datasets.CIFAR10(root=args.data_dir, train=True, download=True, transform=transform)
         testset = datasets.CIFAR10(root=args.data_dir, train=False, download=True, transform=transform)
+    elif args.dataset == 'CIFAR100':
+        args.num_classes = 100
+        transform = transforms.Compose([
+            transforms.ToTensor()
+        ])
+        trainset = datasets.CIFAR100(root=args.data_dir, train=True, download=True, transform=transform)
+        testset = datasets.CIFAR100(root=args.data_dir, train=False, download=True, transform=transform)
     elif args.dataset == 'STL10':
         transform = transforms.Compose([
             transforms.ToTensor()
@@ -79,7 +87,7 @@ def main():
         net = vgg13_bn().cuda()
     elif args.model == 'vgg16':
         from model.vgg import vgg16_bn
-        net = vgg16_bn().cuda()
+        net = vgg16_bn(num_classes=args.num_classes).cuda()
     elif args.model == 'vgg19':
         from model.vgg import vgg19_bn
         net = vgg19_bn().cuda()
@@ -88,7 +96,7 @@ def main():
         net = ResNet18().cuda()
     elif args.model == 'resnet20':
         from model.resnet_v1 import resnet20
-        net = resnet20().cuda()
+        net = resnet20(num_classes=args.num_classes).cuda()
     elif args.model == 'modela':
         from model.modela import ModelA
         net = ModelA().cuda()
