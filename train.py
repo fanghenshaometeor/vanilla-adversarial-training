@@ -13,14 +13,18 @@ import torch.utils.data as data
 import torch.optim as optim
 from torchvision import datasets, transforms
 
+from torch.utils.tensorboard import SummaryWriter
+from torch.utils.data.distributed import DistributedSampler
+
 import os
 import ast
 import copy
+import time
 import random
 import argparse
 import numpy as np
 
-from utils import setup_seed
+from utils import setup_seed, reduce_tensor
 from attackers import pgd_attack
 
 # ======== fix data type ========
@@ -30,23 +34,35 @@ torch.set_default_tensor_type(torch.FloatTensor)
 setup_seed(666)
 
 # ======== options ==============
-parser = argparse.ArgumentParser(description='Training Deep Neural Networks')
+parser = argparse.ArgumentParser(description='Vanilla & Adversarial Training Deep Neural Networks')
 # -------- file param. --------------
 parser.add_argument('--data_dir',type=str,default='/media/Disk1/KunFang/data/CIFAR10/',help='file path for data')
-parser.add_argument('--model_dir',type=str,default='save/',help='file path for saving model')
+parser.add_argument('--model_dir',type=str,default='./save/',help='file path for saving model')
+parser.add_argument('--logs_dir',type=str,default='./runs/',help='file path for logs')
 parser.add_argument('--dataset',type=str,default='CIFAR10',help='data set name')
 parser.add_argument('--model',type=str,default='vgg16',help='model name')
 # -------- training param. ----------
 parser.add_argument('--batch_size',type=int,default=256,help='batch size for training (default: 256)')    
 parser.add_argument('--epochs',type=int,default=200,help='number of epochs to train (default: 200)')
-parser.add_argument('--gpu_id',type=str,default='0',help='gpu device index')
+parser.add_argument('--local_rank',type=int,default=0,help='number of cpu threads')
 # -------- enable adversarial training --------
 parser.add_argument('--adv_train',type=ast.literal_eval,dest='adv_train',help='enable the adversarial training')
+parser.add_argument('--adv_delay',type=int,default=10,help='epochs delay for adversarial training')
+# -------- dataset params --------
 parser.add_argument('--num_classes',type=int,default=10,help='number of classes')
 args = parser.parse_args()
 
-# ======== GPU device ========
-os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu_id
+# ======== DDP init =============
+torch.distributed.init_process_group(backend='nccl')
+torch.cuda.set_device(args.local_rank)
+num_gpus = torch.cuda.device_count()
+print("-------- Let's use %d GPUs!"%num_gpus)
+
+# ======== log writer init ======
+if args.adv_train == True:
+    writer = SummaryWriter(args.logs_dir+args.dataset+'-'+args.model+'-adv/')
+else:
+    writer = SummaryWriter(args.logs_dir+args.dataset+'-'+args.model+'/')
 
 # -------- main function
 def main():
@@ -76,22 +92,11 @@ def main():
         ])
         trainset = datasets.CIFAR100(root=args.data_dir, train=True, download=True, transform=transform_train)
         testset = datasets.CIFAR100(root=args.data_dir, train=False, download=True, transform=transform_test)
-    elif args.dataset == 'STL10':
-        transform_train = transforms.Compose([
-            transforms.RandomCrop(96, padding=4),
-            transforms.RandomHorizontalFlip(),
-            transforms.ToTensor()
-            ])
-        transform_test = transforms.Compose([
-            transforms.ToTensor(),
-            ])
-        trainset = datasets.STL10(root=args.data_dir, split='train', transform=transform_train, download=True)
-        testset = datasets.STL10(root=args.data_dir, split='test', transform=transform_test, download=True)
     else:
         assert False, "Unknow dataset : {}".format(args.dataset)
     
-    trainloader = data.DataLoader(trainset, batch_size=args.batch_size, shuffle=True)
-    testloader = data.DataLoader(testset, batch_size=args.batch_size, shuffle=False)
+    trainloader = data.DataLoader(trainset, batch_size=args.batch_size, num_workers=8, pin_memory=True, sampler=DistributedSampler(trainset))
+    testloader = data.DataLoader(testset, batch_size=args.batch_size, num_workers=8, pin_memory=True, sampler=DistributedSampler(testset))
     train_num, test_num = len(trainset), len(testset)
     print('-------- DATA INFOMATION --------')
     print('---- dataset: '+args.dataset)
@@ -101,27 +106,25 @@ def main():
     # ======== initialize net
     if args.model == 'vgg11':
         from model.vgg import vgg11_bn
-        net = vgg11_bn().cuda()
+        net = vgg11_bn(num_classes=args.num_classes).cuda()
     elif args.model == 'vgg13':
         from model.vgg import vgg13_bn
-        net = vgg13_bn().cuda()
+        net = vgg13_bn(num_classes=args.num_classes).cuda()
     elif args.model == 'vgg16':
         from model.vgg import vgg16_bn
         net = vgg16_bn(num_classes=args.num_classes).cuda()
     elif args.model == 'vgg19':
         from model.vgg import vgg19_bn
-        net = vgg19_bn().cuda()
-    elif args.model == 'resnet18':
-        from model.resnet import ResNet18
-        net = ResNet18().cuda()
-    elif args.model == 'resnet20':
-        from model.resnet_v1 import resnet20
-        net = resnet20(num_classes=args.num_classes).cuda()
-    elif args.model == 'modela':
-        from model.modela import ModelA
-        net = ModelA().cuda()
+        net = vgg19_bn(num_classes=args.num_classes).cuda()
+    elif args.model == 'wrn28x5':
+        from model.wideresnet import wrn28
+        net = wrn28(widen_factor=5, num_classes=args.num_classes).cuda()
+    elif args.model == 'wrn28x10':
+        from model.wideresnet import wrn28
+        net = wrn28(widen_factor=10, num_classes=args.num_classes).cuda()
     else:
         assert False, "Unknow model : {}".format(args.model)
+    net = nn.parallel.DistributedDataParallel(net, device_ids=[args.local_rank], output_device=args.local_rank, find_unused_parameters=True)
     if args.adv_train:
         args.model_path = args.model_dir+args.dataset+'-'+args.model+'-adv.pth'
     else:
@@ -133,45 +136,43 @@ def main():
 
     # ======== set criterions & optimizers
     criterion = nn.CrossEntropyLoss()
-    if args.model == 'vgg11' or args.model == 'vgg13' or args.model == 'vgg16' or args.model == 'vgg19':
-        args.epochs = 200
-        optimizer = optim.SGD(net.parameters(), lr=0.05, momentum=0.9, weight_decay=5e-4)
-        scheduler = optim.lr_scheduler.MultiStepLR(optimizer, [60,120,160], gamma=0.1)
-    elif args.model == 'resnet18' or args.model == 'resnet20':
-        args.epochs = 350
-        optimizer = optim.SGD(net.parameters(), lr=0.1, momentum=0.9, weight_decay=5e-4)
-        scheduler = optim.lr_scheduler.MultiStepLR(optimizer,milestones=[150,250],gamma=0.1)
-    elif args.model == 'modela':
-        args.epochs = 200 
-        optimizer = optim.SGD(net.parameters(), lr=0.05, momentum=0.9, weight_decay=5e-4)
-        scheduler = optim.lr_scheduler.MultiStepLR(optimizer, [60,120,160], gamma=0.1)
+    optimizer = optim.SGD(net.parameters(), lr=0.05*num_gpus, momentum=0.9, weight_decay=5e-4)
+    scheduler = optim.lr_scheduler.MultiStepLR(optimizer, [60,120,160], gamma=0.1)
     
     print('-------- START TRAINING --------')
 
     for epoch in range(args.epochs):
 
+        start = time.time()
         # -------- train
-        loss_tr, loss_tr_adv = train(net, trainloader, testloader, optimizer, criterion)
+        train_epoch(net, trainloader, optimizer, criterion, epoch)
 
         # -------- validation
-        corr_tr, corr_te = val(net, trainloader, testloader)
-        acc_tr = corr_tr / train_num
-        acc_te = corr_te / test_num
+        if epoch % 20 == 0 or epoch == (args.epochs-1):
+            corr_tr, corr_te = val(net, trainloader, testloader)
+            acc_tr = corr_tr / train_num
+            acc_te = corr_te / test_num
+            acc_tr += reduce_tensor(torch.tensor(acc_tr).cuda(args.local_rank))
+            acc_te += reduce_tensor(torch.tensor(acc_te).cuda(args.local_rank))
 
         scheduler.step()
 
-        # -------- save model
-        checkpoint = {'state_dict': net.state_dict()}
-        torch.save(checkpoint, args.model_path)
+        duration = time.time() - start
 
-        if args.adv_train:
-            print('Epoch %d: train loss = %f; adv. train loss = %f; train acc. = %f; test acc. = %f.' % (epoch, loss_tr, loss_tr_adv, acc_tr, acc_te))
-        else:
-            print('Epoch %d: train loss = %f; train acc. = %f; test acc. = %f.' % (epoch, loss_tr, acc_tr, acc_te))
+        # -------- save model
+        if args.local_rank == 0 and (epoch % 20 == 0 or epoch == (args.epochs-1)):
+            checkpoint = {'state_dict': net.state_dict()}
+            torch.save(checkpoint, args.model_path)
+
+        # -------- print info.
+        if args.local_rank == 0:
+            print('Epoch %d/%d costs %fs :'%(epoch, args.epochs, duration))
+            print('Current training model: ', args.model_path)
+            print('Train/Test accuracy = %f/%f.'%(acc_tr, acc_te))
     
 
 # ======== train  model ========
-def train(net, trainloader, testloader, optim, criterion):
+def train_epoch(net, trainloader, optim, criterion, epoch):
     
     net.train()
         
@@ -194,10 +195,19 @@ def train(net, trainloader, testloader, optim, criterion):
         
         # -------- compute loss
         loss = criterion(logits, b_label)
-        
-        running_loss_tr = running_loss_tr + loss.item()
-        if batch_idx == (len(trainloader)-1):
+        running_loss_tr = running_loss_tr + reduce_tensor(loss.data).item()
+
+        # -------- print info. at the last epoch
+        if args.local_rank == 0 and batch_idx == (len(trainloader)-1):
             avg_loss_tr = running_loss_tr / len(trainloader)
+
+            # -------- record
+            writer.add_scalar('loss-train', avg_loss_tr)
+
+            # -------- print in terminal
+            print('Epoch %d/%d CLEAN samples:'%(epoch, args.epochs))
+            print('     CROSS ENTROPY loss = %f.'%avg_loss_tr)
+
         
         # -------- backprop. & update
         loss.backward()
@@ -205,22 +215,31 @@ def train(net, trainloader, testloader, optim, criterion):
 
         if args.adv_train:
             # -------- training with adversarial examples
-            net_copy = copy.deepcopy(net)
-            net_copy.eval()
-            perturbed_data = pgd_attack(net_copy, b_data, b_label, eps=0.013, alpha=0.01, iters=7)
+            net.eval()
+            perturbed_data = pgd_attack(net, b_data, b_label, eps=0.031, alpha=0.01, iters=7)
+            net.train()
+
             logits_adv = net(perturbed_data)
             loss_adv = criterion(logits_adv, b_label)
+            running_loss_tr_adv = running_loss_tr_adv + reduce_tensor(loss_adv.data).item()
 
-            running_loss_tr_adv = running_loss_tr_adv + loss_adv.item()
-            if batch_idx == (len(trainloader)-1):
+            # -------- print info. at the last epoch
+            if args.local_rank == 0 and batch_idx == (len(trainloader)-1):
                 avg_loss_tr_adv = running_loss_tr_adv / len(trainloader)
+
+                # -------- record
+                writer.add_scalar('loss-train-adv', avg_loss_tr_adv)
+
+                # -------- print in terminal
+                print('Epoch %d/%d ADVERSARIAL samples:'%(epoch, args.epochs))
+                print('     CROSS ENTROPY loss = %f.'%avg_loss_tr)
 
             # -------- backprop. & update again
             optim.zero_grad()
             loss_adv.backward()
             optim.step()
 
-    return avg_loss_tr, avg_loss_tr_adv
+    return
 
 # ======== evaluate model ========
 def val(net, trainloader, testloader):
@@ -252,6 +271,9 @@ def val(net, trainloader, testloader):
             _, predicted = torch.max(logits.data, 1)
             
             correct_train += (predicted == labels).sum().item()  
+        
+        # correct_train += reduce_tensor(torch.tensor(correct_train).cuda(args.local_rank))
+        # correct_test += reduce_tensor(torch.tensor(correct_test).cuda(args.local_rank))
     
     return correct_train, correct_test
 

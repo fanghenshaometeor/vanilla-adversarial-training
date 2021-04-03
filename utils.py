@@ -19,3 +19,10 @@ def setup_seed(seed):
      np.random.seed(seed)
      random.seed(seed)
      torch.backends.cudnn.deterministic = True
+
+# -------- for DDP training
+def reduce_tensor(tensor: torch.Tensor):
+     rt = tensor.clone()
+     torch.distributed.all_reduce(rt, op=torch.distributed.ReduceOp.SUM)
+     rt /= torch.distributed.get_world_size()
+     return rt
