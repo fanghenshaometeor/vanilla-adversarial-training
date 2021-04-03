@@ -3,7 +3,6 @@
 This repo provides the PyTorch code for both **vanilla** training and **adversarial** training deep neural networks, including
 - **CIFAR10 + vgg11/vgg13/vgg16/vgg19/resnet18/resnet20**
 - **CIFAR100 + vgg16/resnet20**
-- **STL10 + [modelA](https://github.com/aaron-xichen/pytorch-playground/blob/master/stl10/model.py)**
 
 ## File Descriptions
 
