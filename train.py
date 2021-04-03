@@ -159,16 +159,16 @@ def main():
 
         duration = time.time() - start
 
-        # -------- save model
+        # -------- save model & print info
         if args.local_rank == 0 and (epoch % 20 == 0 or epoch == (args.epochs-1)):
             checkpoint = {'state_dict': net.state_dict()}
             torch.save(checkpoint, args.model_path)
+            print('Train/Test accuracy = %f/%f.'%(acc_tr, acc_te))
 
         # -------- print info.
         if args.local_rank == 0:
             print('Epoch %d/%d costs %fs :'%(epoch, args.epochs, duration))
             print('Current training model: ', args.model_path)
-            print('Train/Test accuracy = %f/%f.'%(acc_tr, acc_te))
     
 
 # ======== train  model ========
