@@ -232,7 +232,7 @@ def train_epoch(net, trainloader, optim, criterion, epoch):
 
                 # -------- print in terminal
                 print('Epoch %d/%d ADVERSARIAL samples:'%(epoch, args.epochs))
-                print('     CROSS ENTROPY loss = %f.'%avg_loss_tr)
+                print('     CROSS ENTROPY loss = %f.'%avg_loss_tr_adv)
 
             # -------- backprop. & update again
             optim.zero_grad()
