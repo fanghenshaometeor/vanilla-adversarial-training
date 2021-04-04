@@ -1,4 +1,4 @@
-# --------- CIFAR10-vgg/resnet ------------------
+# --------- CIFAR10-vgg  ------------------------
 # model=vgg11
 # model_path='./save/CIFAR10-vgg11.pth'
 # model_path='./save/CIFAR10-vgg11-adv.pth'
@@ -14,35 +14,18 @@
 # model=vgg19
 # model_path='./save/CIFAR10-vgg19.pth'
 # model_path='./save/CIFAR10-vgg19-adv.pth'
-# --------
-# model=resnet18
-# model_path='./save/CIFAR10-resnet18.pth'
-# model_path='./save/CIFAR10-resnet18-adv.pth'
-# --------
-# model=resnet20
-# model_path='./save/CIFAR10-resnet20.pth'
-# model_path='./save/CIFAR10-resnet20-adv.pth'
-# --------
-# dataset=CIFAR10
-# data_dir='/media/Disk1/KunFang/data/CIFAR10/'
 # -----------------------------------------------
-# --------- CIFAR100-vgg16/resnet20 -------------
-# model=vgg16
-# model_path='./save/CIFAR100-vgg16.pth'
+# --------- CIFAR100-wideresnet -----------------
+# model=wrn28x5
+# model_path='./save/CIFAR100-wrn28x5.pth'
 # model_path='./save/CIFAR100-vgg16-adv.pth'
 # --------
-model=resnet20
-# model_path='./save/CIFAR100-resnet20.pth'
-model_path='./save/CIFAR100-resnet20-adv.pth'
+model=wrn28x10
+model_path='./save/CIFAR100-wrn28x10.pth'
+# model_path='./save/CIFAR100-resnet20-adv.pth'
 # --------
 dataset=CIFAR100
 data_dir='/media/Disk1/KunFang/data/CIFAR100/'
-# --------- STL10-modelA ------------------------
-# model=modela
-# model_path='./save/STL10-modela.pth'
-# model_path='./save/STL10-modela-adv.pth'
-# dataset=STL10
-# data_dir='/media/Disk1/KunFang/data/STL10/'
 # -----------------------------------------------
 gpu_id=1
 

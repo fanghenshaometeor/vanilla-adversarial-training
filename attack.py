@@ -36,7 +36,7 @@ parser.add_argument('--model',type=str,default='vgg16',help='model architecture 
 parser.add_argument('--model_path',type=str,default='./save/CIFAR10-VGG.pth',help='saved model path')
 # -------- training param. ----------
 parser.add_argument('--num_classes',type=int,default=10,help='number of classes')
-parser.add_argument('--batch_size',type=int,default=256,help='batch size for training (default: 256)')
+parser.add_argument('--batch_size',type=int,default=128,help='batch size for training (default: 256)')
 parser.add_argument('--gpu_id',type=str,default='0',help='gpu device index')
 args = parser.parse_args()
 
@@ -61,12 +61,6 @@ def main():
         ])
         trainset = datasets.CIFAR100(root=args.data_dir, train=True, download=True, transform=transform)
         testset = datasets.CIFAR100(root=args.data_dir, train=False, download=True, transform=transform)
-    elif args.dataset == 'STL10':
-        transform = transforms.Compose([
-            transforms.ToTensor()
-        ])
-        trainset = datasets.STL10(root=args.data_dir, split='train', transform=transform, download=True)
-        testset = datasets.STL10(root=args.data_dir, split='test', transform=transform, download=True)
     else:
         assert False, "Unknow dataset : {}".format(args.dataset)
     trainloader = data.DataLoader(trainset, batch_size=args.batch_size, shuffle=False)
@@ -81,27 +75,25 @@ def main():
     checkpoint = torch.load(args.model_path, map_location=torch.device("cpu"))
     if args.model == 'vgg11':
         from model.vgg import vgg11_bn
-        net = vgg11_bn().cuda()
+        net = vgg11_bn(num_classes=args.num_classes).cuda()
     elif args.model == 'vgg13':
         from model.vgg import vgg13_bn
-        net = vgg13_bn().cuda()
+        net = vgg13_bn(num_classes=args.num_classes).cuda()
     elif args.model == 'vgg16':
         from model.vgg import vgg16_bn
         net = vgg16_bn(num_classes=args.num_classes).cuda()
     elif args.model == 'vgg19':
         from model.vgg import vgg19_bn
-        net = vgg19_bn().cuda()
-    elif args.model == 'resnet18':
-        from model.resnet import ResNet18
-        net = ResNet18().cuda()
-    elif args.model == 'resnet20':
-        from model.resnet_v1 import resnet20
-        net = resnet20(num_classes=args.num_classes).cuda()
-    elif args.model == 'modela':
-        from model.modela import ModelA
-        net = ModelA().cuda()
+        net = vgg19_bn(num_classes=args.num_classes).cuda()
+    elif args.model == 'wrn28x5':
+        from model.wideresnet import wrn28
+        net = wrn28(widen_factor=5, num_classes=args.num_classes).cuda()
+    elif args.model == 'wrn28x10':
+        from model.wideresnet import wrn28
+        net = wrn28(widen_factor=10, num_classes=args.num_classes).cuda()
     else:
         assert False, "Unknow model : {}".format(args.model)
+    net = nn.DataParallel(net)
     net.load_state_dict(checkpoint['state_dict'])
     net.eval()
     print('-------- MODEL INFORMATION --------')
