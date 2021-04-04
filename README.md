@@ -58,6 +58,7 @@ $ sh train.sh
 ## Dependencies
 - python 3.6
 - PyTorch 1.7.1
+All the experiments are executed on a Linux machine with 4 GeForce GTX 1080 GPUs.
 
 ## 
 
