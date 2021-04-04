@@ -213,7 +213,7 @@ def train_epoch(net, trainloader, optim, criterion, epoch):
         loss.backward()
         optim.step()
 
-        if args.adv_train:
+        if args.adv_train and epoch >= args.adv_delay:
             # -------- training with adversarial examples
             net.eval()
             perturbed_data = pgd_attack(net, b_data, b_label, eps=0.031, alpha=0.01, iters=7)
@@ -271,10 +271,7 @@ def val(net, trainloader, testloader):
             _, predicted = torch.max(logits.data, 1)
             
             correct_train += (predicted == labels).sum().item()  
-        
-        # correct_train += reduce_tensor(torch.tensor(correct_train).cuda(args.local_rank))
-        # correct_test += reduce_tensor(torch.tensor(correct_test).cuda(args.local_rank))
-    
+  
     return correct_train, correct_test
 
 
