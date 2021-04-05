@@ -152,8 +152,8 @@ def main():
             corr_tr, corr_te = val(net, trainloader, testloader)
             acc_tr = corr_tr / train_num
             acc_te = corr_te / test_num
-            acc_tr += reduce_tensor(torch.tensor(acc_tr).cuda(args.local_rank))
-            acc_te += reduce_tensor(torch.tensor(acc_te).cuda(args.local_rank))
+            acc_tr = reduce_tensor(torch.tensor(acc_tr).cuda(args.local_rank))
+            acc_te = reduce_tensor(torch.tensor(acc_te).cuda(args.local_rank))
 
         scheduler.step()
 
