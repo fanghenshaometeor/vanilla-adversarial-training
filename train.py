@@ -202,7 +202,7 @@ def train_epoch(net, trainloader, optim, criterion, epoch):
             avg_loss_tr = running_loss_tr / len(trainloader)
 
             # -------- record
-            writer.add_scalar('loss-train', avg_loss_tr)
+            writer.add_scalar('loss-train', avg_loss_tr, epoch)
 
             # -------- print in terminal
             print('Epoch %d/%d CLEAN samples:'%(epoch, args.epochs))
@@ -228,7 +228,7 @@ def train_epoch(net, trainloader, optim, criterion, epoch):
                 avg_loss_tr_adv = running_loss_tr_adv / len(trainloader)
 
                 # -------- record
-                writer.add_scalar('loss-train-adv', avg_loss_tr_adv)
+                writer.add_scalar('loss-train-adv', avg_loss_tr_adv, epoch)
 
                 # -------- print in terminal
                 print('Epoch %d/%d ADVERSARIAL samples:'%(epoch, args.epochs))
