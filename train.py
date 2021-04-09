@@ -60,9 +60,9 @@ print("-------- Let's use %d GPUs!"%num_gpus)
 
 # ======== log writer init ======
 if args.adv_train == True:
-    writer = SummaryWriter(args.logs_dir+args.dataset+'-'+args.model+'-adv/')
+    writer = SummaryWriter(os.path.join(args.logs_dir,args.dataset,args.model+'-adv/'))
 else:
-    writer = SummaryWriter(args.logs_dir+args.dataset+'-'+args.model+'/')
+    writer = SummaryWriter(os.path.join(args.logs_dir,args.dataset,args.model+'/'))
 
 # -------- main function
 def main():
@@ -126,9 +126,9 @@ def main():
         assert False, "Unknow model : {}".format(args.model)
     net = nn.parallel.DistributedDataParallel(net, device_ids=[args.local_rank], output_device=args.local_rank, find_unused_parameters=True)
     if args.adv_train:
-        args.model_path = args.model_dir+args.dataset+'-'+args.model+'-adv.pth'
+        args.model_path = os.path.join(args.model_dir,args.dataset,args.model+'-adv.pth')
     else:
-        args.model_path = args.model_dir+args.dataset+'-'+args.model+'.pth'
+        args.model_path = os.path.join(args.model_dir,args.dataset,args.model+'.pth')
     print('-------- MODEL INFORMATION --------')
     print('---- model:      '+args.model)
     print('---- adv. train: '+str(args.adv_train))
