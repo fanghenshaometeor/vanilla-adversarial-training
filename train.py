@@ -42,7 +42,7 @@ parser.add_argument('--logs_dir',type=str,default='./runs/',help='file path for 
 parser.add_argument('--dataset',type=str,default='CIFAR10',help='data set name')
 parser.add_argument('--model',type=str,default='vgg16',help='model name')
 # -------- training param. ----------
-parser.add_argument('--batch_size',type=int,default=256,help='batch size for training (default: 256)')    
+parser.add_argument('--batch_size',type=int,default=1024,help='batch size for training (default: 256)')    
 parser.add_argument('--epochs',type=int,default=200,help='number of epochs to train (default: 200)')
 parser.add_argument('--local_rank',type=int,default=0,help='number of cpu threads')
 # -------- enable adversarial training --------
@@ -92,6 +92,14 @@ def main():
         ])
         trainset = datasets.CIFAR100(root=args.data_dir, train=True, download=True, transform=transform_train)
         testset = datasets.CIFAR100(root=args.data_dir, train=False, download=True, transform=transform_test)
+    elif args.dataset == 'svhn':
+        transform = transforms.Compose([
+            transforms.ToTensor()
+        ])
+        trainset = datasets.SVHN(root=args.data_dir, split='train', download=True, 
+                            transform=transform)
+        testset = datasets.SVHN(root=args.data_dir, split='test', download=True, 
+                            transform=transform)
     else:
         assert False, "Unknow dataset : {}".format(args.dataset)
     
@@ -116,6 +124,12 @@ def main():
     elif args.model == 'vgg19':
         from model.vgg import vgg19_bn
         net = vgg19_bn(num_classes=args.num_classes).cuda()
+    elif args.model == 'resnet20':
+        from model.resnet_v1 import resnet20
+        net = resnet20(num_classes=args.num_classes).cuda()
+    elif args.model == 'resnet32':
+        from model.resnet_v1 import resnet32
+        net = resnet32(num_classes=args.num_classes).cuda()
     elif args.model == 'wrn28x5':
         from model.wideresnet import wrn28
         net = wrn28(widen_factor=5, num_classes=args.num_classes).cuda()

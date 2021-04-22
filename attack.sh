@@ -15,10 +15,6 @@
 # model_path='./save/CIFAR10-vgg19.pth'
 # model_path='./save/CIFAR10-vgg19-adv.pth'
 # --------
-# -------- TEMP
-model=resnet-litao
-model_path='./save/PBFGS.pt'
-# --------
 dataset=CIFAR10
 data_dir='/media/Disk1/KunFang/data/CIFAR10/'
 # -----------------------------------------------
@@ -34,7 +30,19 @@ data_dir='/media/Disk1/KunFang/data/CIFAR10/'
 # dataset=CIFAR100
 # data_dir='/media/Disk1/KunFang/data/CIFAR100/'
 # -----------------------------------------------
-gpu_id=1
+# --------- SVHN-resnet -------------------------
+# model=resnet20
+# model_path='./save/svhn/resnet20.pth'
+# model_path='./save/svhn/resnet20-adv.pth'
+# --------
+model=resnet32
+# model_path='./save/svhn/resnet32.pth'
+model_path='./save/svhn/resnet32-adv.pth'
+# --------
+dataset=svhn
+data_dir='/media/Disk1/KunFang/data/SVHN/'
+# -----------------------------------------------
+gpu_id=0
 
 python attack.py \
     --model ${model} \

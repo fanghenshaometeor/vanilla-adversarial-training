@@ -61,6 +61,14 @@ def main():
         ])
         trainset = datasets.CIFAR100(root=args.data_dir, train=True, download=True, transform=transform)
         testset = datasets.CIFAR100(root=args.data_dir, train=False, download=True, transform=transform)
+    elif args.dataset == 'svhn':
+        transform = transforms.Compose([
+            transforms.ToTensor()
+        ])
+        trainset = datasets.SVHN(root=args.data_dir, split='train', download=True, 
+                            transform=transform)
+        testset = datasets.SVHN(root=args.data_dir, split='test', download=True, 
+                            transform=transform)
     else:
         assert False, "Unknow dataset : {}".format(args.dataset)
     trainloader = data.DataLoader(trainset, batch_size=args.batch_size, shuffle=False)
@@ -85,6 +93,12 @@ def main():
     elif args.model == 'vgg19':
         from model.vgg import vgg19_bn
         net = vgg19_bn(num_classes=args.num_classes).cuda()
+    elif args.model == 'resnet20':
+        from model.resnet_v1 import resnet20
+        net = resnet20(num_classes=args.num_classes).cuda()
+    elif args.model == 'resnet32':
+        from model.resnet_v1 import resnet32
+        net = resnet32(num_classes=args.num_classes).cuda()
     elif args.model == 'wrn28x5':
         from model.wideresnet import wrn28
         net = wrn28(widen_factor=5, num_classes=args.num_classes).cuda()
