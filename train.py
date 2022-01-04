@@ -86,13 +86,17 @@ def main():
     # ======== 
     args.train_eps /= 255.
     args.train_gamma /= 255.
+    if args.adv_train:
+        adversary = LinfPGDAttack(net, loss_fn=criterion, eps=args.train_eps, nb_iter=args.train_step, eps_iter=args.train_gamma, rand_init=True, clip_min=0.0, clip_max=1.0, targeted=False)
+    else:
+        adversary = None
 
     print('-------- START TRAINING --------')
     for epoch in range(1, args.epochs+1):
 
         # -------- train
         print('Training(%d/%d)...'%(epoch, args.epochs))
-        train_epoch(net, trainloader, optimizer, criterion, epoch)
+        train_epoch(net, trainloader, optimizer, criterion, epoch, adversary)
 
         # -------- validation
         print('Validating...')
@@ -125,16 +129,12 @@ def main():
     
 
 # ======== train  model ========
-def train_epoch(net, trainloader, optim, criterion, epoch):
+def train_epoch(net, trainloader, optim, criterion, epoch, adversary):
     
     net.train()
         
     batch_time = AverageMeter()
     losses = AverageMeter()
-
-    if args.adv_train:
-        adversary = LinfPGDAttack(net, loss_fn=criterion, eps=args.train_eps, nb_iter=args.train_step, eps_iter=args.train_gamma, rand_init=True, clip_min=0.0, clip_max=1.0, targeted=False)
-
 
     end = time.time()
     for _, (b_data, b_label) in enumerate(trainloader):
