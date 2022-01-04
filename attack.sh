@@ -1,52 +1,38 @@
-# --------- CIFAR10-vgg  ------------------------
-# model=vgg11
-# model_path='./save/CIFAR10-vgg11.pth'
-# model_path='./save/CIFAR10-vgg11-adv.pth'
+# --------- CIFAR10 -----------------------------
+# model=resnet18
+# model_path='./save/CIFAR10/resnet18/epoch200.pth'
+# model_path='./save/CIFAR10/resnet18/epoch200-adv.pth'
 # --------
-# model=vgg13
-# model_path='./save/CIFAR10-vgg13.pth'
-# model_path='./save/CIFAR10-vgg13-adv.pth'
+arch=preactresnet18
+# model_path='./save/CIFAR10/preactresnet18/epoch200.pth'
+model_path='./save/CIFAR10/preactresnet18/epoch200-adv.pth'
 # --------
-# model=vgg16
-# model_path='./save/CIFAR10-vgg16.pth'
-# model_path='./save/CIFAR10-vgg16-adv.pth'
-# --------
-# model=vgg19
-# model_path='./save/CIFAR10-vgg19.pth'
-# model_path='./save/CIFAR10-vgg19-adv.pth'
+# model=resnet20
+# model_path='./save/CIFAR10/resnet20/epoch200.pth'
+# model_path='./save/CIFAR10/resnet20/epoch200-adv.pth'
 # --------
 dataset=CIFAR10
 data_dir='/media/Disk1/KunFang/data/CIFAR10/'
 # -----------------------------------------------
 # --------- CIFAR100-wideresnet -----------------
 # model=wrn28x5
-# model_path='./save/CIFAR100-wrn28x5.pth'
-# model_path='./save/CIFAR100-wrn28x5-adv.pth'
+# model_path='./save/CIFAR100/wrn28x5.pth'
+# model_path='./save/CIFAR100/wrn28x5-adv.pth'
 # --------
 # model=wrn28x10
-# model_path='./save/CIFAR100-wrn28x10.pth'
-# model_path='./save/CIFAR100-wrn28x10-adv.pth'
+# model_path='./save/CIFAR100/wrn28x10.pth'
+# model_path='./save/CIFAR100/wrn28x10-adv.pth'
 # --------
 # dataset=CIFAR100
 # data_dir='/media/Disk1/KunFang/data/CIFAR100/'
 # -----------------------------------------------
-# --------- SVHN-resnet -------------------------
-# model=resnet20
-# model_path='./save/svhn/resnet20.pth'
-# model_path='./save/svhn/resnet20-adv.pth'
-# --------
-model=resnet32
-# model_path='./save/svhn/resnet32.pth'
-model_path='./save/svhn/resnet32-adv.pth'
-# --------
-dataset=svhn
-data_dir='/media/Disk1/KunFang/data/SVHN/'
-# -----------------------------------------------
-gpu_id=0
+attack_type=None
+# attack_type=fgsm
+# attack_type=pgd
 
-python attack.py \
-    --model ${model} \
+CUDA_VISIBLE_DEVICES=1 python attack.py \
+    --arch ${arch} \
     --model_path ${model_path} \
     --dataset ${dataset} \
-    --data_dir ${data_dir}   \
-    --gpu_id ${gpu_id}
+    --data_dir ${data_dir} \
+    --attack_type ${attack_type}
