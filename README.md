@@ -54,8 +54,8 @@ $ sh train.sh
 
 ## Dependencies
 - python 3.6
-- PyTorch 1.7.1
-- AdverTorch
+- PyTorch 1.7.0
+- AdverTorch 0.2.3
 
 ## 
 
