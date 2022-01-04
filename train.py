@@ -9,12 +9,9 @@ from __future__ import print_function
 
 import torch
 import torch.nn as nn
-import torch.utils.data as data
 import torch.optim as optim
-from torchvision import datasets, transforms
 
 from torch.utils.tensorboard import SummaryWriter
-from torch.utils.data.distributed import DistributedSampler
 
 import os
 import ast
@@ -24,14 +21,15 @@ import random
 import argparse
 import numpy as np
 
-from utils import setup_seed, reduce_tensor
-from attackers import pgd_attack
+from utils import setup_seed
+from utils import get_datasets, get_model
+from utils import AverageMeter, accuracy
+
+from advertorch.attacks import LinfPGDAttack
+from advertorch.context import ctx_noparamgrad_and_eval
 
 # ======== fix data type ========
 torch.set_default_tensor_type(torch.FloatTensor)
-
-# ======== fix seed =============
-setup_seed(666)
 
 # ======== options ==============
 parser = argparse.ArgumentParser(description='Vanilla & Adversarial Training Deep Neural Networks')
@@ -40,253 +38,168 @@ parser.add_argument('--data_dir',type=str,default='/media/Disk1/KunFang/data/CIF
 parser.add_argument('--model_dir',type=str,default='./save/',help='file path for saving model')
 parser.add_argument('--logs_dir',type=str,default='./runs/',help='file path for logs')
 parser.add_argument('--dataset',type=str,default='CIFAR10',help='data set name')
-parser.add_argument('--model',type=str,default='vgg16',help='model name')
+parser.add_argument('--arch',type=str,default='vgg16',help='model architecture')
 # -------- training param. ----------
-parser.add_argument('--batch_size',type=int,default=1024,help='batch size for training (default: 256)')    
+parser.add_argument('--batch_size',type=int,default=256,help='batch size for training (default: 256)')    
+parser.add_argument('--lr_base',type=float,default=0.05,help='learning rate (default: 0.05)')
 parser.add_argument('--epochs',type=int,default=200,help='number of epochs to train (default: 200)')
-parser.add_argument('--local_rank',type=int,default=0,help='number of cpu threads')
+parser.add_argument('--save_freq',type=int,default=20,help='model save frequency (default: 20 epoch)')
 # -------- enable adversarial training --------
 parser.add_argument('--adv_train',type=ast.literal_eval,dest='adv_train',help='enable the adversarial training')
-parser.add_argument('--adv_delay',type=int,default=10,help='epochs delay for adversarial training')
-# -------- dataset params --------
-parser.add_argument('--num_classes',type=int,default=10,help='number of classes')
+parser.add_argument('--train_eps', default=8., type=float, help='epsilon of attack during training')
+parser.add_argument('--train_step', default=10, type=int, help='itertion number of attack during training')
+parser.add_argument('--train_gamma', default=2., type=float, help='step size of attack during training')
+parser.add_argument('--test_eps', default=8., type=float, help='epsilon of attack during testing')
+parser.add_argument('--test_step', default=20, type=int, help='itertion number of attack during testing')
+parser.add_argument('--test_gamma', default=2., type=float, help='step size of attack during testing')
 args = parser.parse_args()
-
-# ======== DDP init =============
-torch.distributed.init_process_group(backend='nccl')
-torch.cuda.set_device(args.local_rank)
-num_gpus = torch.cuda.device_count()
-print("-------- Let's use %d GPUs!"%num_gpus)
 
 # ======== log writer init ======
 if args.adv_train == True:
-    writer = SummaryWriter(os.path.join(args.logs_dir,args.dataset,args.model+'-adv/'))
+    writer = SummaryWriter(os.path.join(args.logs_dir,args.dataset,args.arch+'-adv/'))
 else:
-    writer = SummaryWriter(os.path.join(args.logs_dir,args.dataset,args.model+'/'))
+    writer = SummaryWriter(os.path.join(args.logs_dir,args.dataset,args.arch+'/'))
 
 # -------- main function
 def main():
+
+    # ======== fix random seed ========
+    setup_seed(666)
     
-    # ======== data set preprocess =============
-    # ======== mean-variance normalization is removed
-    if args.dataset == 'CIFAR10':
-        transform_train = transforms.Compose([
-            transforms.RandomCrop(32, padding=4),
-            transforms.RandomHorizontalFlip(),
-            transforms.ToTensor()
-        ])
-        transform_test = transforms.Compose([
-            transforms.ToTensor()
-        ])
-        trainset = datasets.CIFAR10(root=args.data_dir, train=True, download=True, transform=transform_train)
-        testset = datasets.CIFAR10(root=args.data_dir, train=False, download=True, transform=transform_test)
-    elif args.dataset == 'CIFAR100':
-        args.num_classes = 100
-        transform_train = transforms.Compose([
-            transforms.RandomCrop(32, padding=4),
-            transforms.RandomHorizontalFlip(),
-            transforms.ToTensor()
-        ])
-        transform_test = transforms.Compose([
-            transforms.ToTensor()
-        ])
-        trainset = datasets.CIFAR100(root=args.data_dir, train=True, download=True, transform=transform_train)
-        testset = datasets.CIFAR100(root=args.data_dir, train=False, download=True, transform=transform_test)
-    elif args.dataset == 'svhn':
-        transform = transforms.Compose([
-            transforms.ToTensor()
-        ])
-        trainset = datasets.SVHN(root=args.data_dir, split='train', download=True, 
-                            transform=transform)
-        testset = datasets.SVHN(root=args.data_dir, split='test', download=True, 
-                            transform=transform)
-    else:
-        assert False, "Unknow dataset : {}".format(args.dataset)
-    
-    trainloader = data.DataLoader(trainset, batch_size=args.batch_size, num_workers=8, pin_memory=True, sampler=DistributedSampler(trainset))
-    testloader = data.DataLoader(testset, batch_size=args.batch_size, num_workers=8, pin_memory=True, sampler=DistributedSampler(testset))
-    train_num, test_num = len(trainset), len(testset)
+    # ======== get data set =============
+    trainloader, testloader = get_datasets(args)
     print('-------- DATA INFOMATION --------')
     print('---- dataset: '+args.dataset)
-    print('---- #train : %d'%train_num)
-    print('---- #test  : %d'%test_num)
 
     # ======== initialize net
-    if args.model == 'vgg11':
-        from model.vgg import vgg11_bn
-        net = vgg11_bn(num_classes=args.num_classes).cuda()
-    elif args.model == 'vgg13':
-        from model.vgg import vgg13_bn
-        net = vgg13_bn(num_classes=args.num_classes).cuda()
-    elif args.model == 'vgg16':
-        from model.vgg import vgg16_bn
-        net = vgg16_bn(num_classes=args.num_classes).cuda()
-    elif args.model == 'vgg19':
-        from model.vgg import vgg19_bn
-        net = vgg19_bn(num_classes=args.num_classes).cuda()
-    elif args.model == 'resnet20':
-        from model.resnet_v1 import resnet20
-        net = resnet20(num_classes=args.num_classes).cuda()
-    elif args.model == 'resnet32':
-        from model.resnet_v1 import resnet32
-        net = resnet32(num_classes=args.num_classes).cuda()
-    elif args.model == 'wrn28x5':
-        from model.wideresnet import wrn28
-        net = wrn28(widen_factor=5, num_classes=args.num_classes).cuda()
-    elif args.model == 'wrn28x10':
-        from model.wideresnet import wrn28
-        net = wrn28(widen_factor=10, num_classes=args.num_classes).cuda()
-    else:
-        assert False, "Unknow model : {}".format(args.model)
-    net = nn.parallel.DistributedDataParallel(net, device_ids=[args.local_rank], output_device=args.local_rank, find_unused_parameters=True)
-    if args.adv_train:
-        args.model_path = os.path.join(args.model_dir,args.dataset,args.model+'-adv.pth')
-    else:
-        args.model_path = os.path.join(args.model_dir,args.dataset,args.model+'.pth')
+    net = get_model(args)
+    net = net.cuda()
     print('-------- MODEL INFORMATION --------')
-    print('---- model:      '+args.model)
-    print('---- adv. train: '+str(args.adv_train))
-    print('---- saved path: '+args.model_path)
+    print('---- architecture: '+args.arch)
+    print('---- adv.   train: '+str(args.adv_train))
 
     # ======== set criterions & optimizers
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(net.parameters(), lr=0.05*num_gpus, momentum=0.9, weight_decay=5e-4)
+    optimizer = optim.SGD(net.parameters(), lr=args.lr_base, momentum=0.9, weight_decay=5e-4)
     scheduler = optim.lr_scheduler.MultiStepLR(optimizer, [60,120,160], gamma=0.1)
-    
+
+    # ======== 
+    args.train_eps /= 255.
+    args.train_gamma /= 255.
+
     print('-------- START TRAINING --------')
+    for epoch in range(1, args.epochs+1):
 
-    for epoch in range(args.epochs):
-
-        start = time.time()
         # -------- train
-        train_epoch(net, trainloader, optimizer, criterion, epoch)
+        print('Training(%d/%d)...'%(epoch, args.epochs))
+        train_epoch(net, trainloader, optimizer, criterion, epoch, args)
 
         # -------- validation
-        if epoch % 20 == 0 or epoch == (args.epochs-1):
-            corr_tr, corr_te = val(net, trainloader, testloader)
-            acc_tr = corr_tr / train_num
-            acc_te = corr_te / test_num
-            acc_tr = reduce_tensor(torch.tensor(acc_tr).cuda(args.local_rank))
-            acc_te = reduce_tensor(torch.tensor(acc_te).cuda(args.local_rank))
+        print('Validating...')
+        acc_te = val(net, testloader)
+        acc_tr = val(net, trainloader)
 
+        # ---- record
+        valacc = {}
+        valacc['train'], valacc['test'] = acc_tr, acc_te
+        writer.add_scalars('valacc', valacc, epoch)
+        print('     Train/Test accuracy = %.2f/%.2f.'%(acc_tr, acc_te))
+        
         scheduler.step()
 
-        duration = time.time() - start
-
         # -------- save model & print info
-        if args.local_rank == 0 and (epoch % 20 == 0 or epoch == (args.epochs-1)):
+        if not os.path.exists(os.path.join(args.model_dir,args.dataset,args.arch)):
+            os.makedirs(os.path.join(args.model_dir,args.dataset,args.arch))
+
+        if (epoch == 1 or epoch % args.save_freq == 0 or epoch == args.epochs):
             checkpoint = {'state_dict': net.state_dict()}
-            torch.save(checkpoint, args.model_path)
-            print('Train/Test accuracy = %f/%f.'%(acc_tr, acc_te))
+            if args.adv_train:
+                args.model_path = 'epoch%d'%epoch+'-adv.pth'
+            else:
+                args.model_path = 'epoch%d'%epoch+'.pth'
+            torch.save(checkpoint, os.path.join(args.model_dir,args.dataset,args.arch,args.model_path))
 
         # -------- print info.
-        if args.local_rank == 0:
-            print('Epoch %d/%d costs %fs :'%(epoch, args.epochs, duration))
-            print('Current training model: ', args.model_path)
+        print('Current training %s on data set %s.'%(args.arch, args.dataset))
+        print('===========================================')
     
 
 # ======== train  model ========
-def train_epoch(net, trainloader, optim, criterion, epoch):
+def train_epoch(net, trainloader, optim, criterion, epoch, args):
     
     net.train()
         
-    running_loss_tr = 0.0
-    avg_loss_tr = 0.0
-    running_loss_tr_adv = 0.0
-    avg_loss_tr_adv = 0.0
+    batch_time = AverageMeter()
+    losses = AverageMeter()
 
-    
-    for batch_idx, (b_data, b_label) in enumerate(trainloader):
+    if args.adv_train:
+        adversary = LinfPGDAttack(net, loss_fn=criterion, eps=args.train_eps, nb_iter=args.train_step, eps_iter=args.train_gamma, rand_init=True, clip_min=0.0, clip_max=1.0, targeted=False)
+
+
+    end = time.time()
+    for _, (b_data, b_label) in enumerate(trainloader):
         
         # -------- move to gpu
         b_data, b_label = b_data.cuda(), b_label.cuda()
-        
-        # -------- set zero param. gradients
-        optim.zero_grad()
-              
-        # -------- feed noise to the network
-        logits = net(b_data)
-        
-        # -------- compute loss
-        loss = criterion(logits, b_label)
-        running_loss_tr = running_loss_tr + reduce_tensor(loss.data).item()
-
-        # -------- print info. at the last epoch
-        if args.local_rank == 0 and batch_idx == (len(trainloader)-1):
-            avg_loss_tr = running_loss_tr / len(trainloader)
-
-            # -------- record
-            writer.add_scalar('loss-train', avg_loss_tr, epoch)
-
-            # -------- print in terminal
-            print('Epoch %d/%d CLEAN samples:'%(epoch, args.epochs))
-            print('     CROSS ENTROPY loss = %f.'%avg_loss_tr)
 
         
+        if args.adv_train:
+            # -------- training with adversarial examples
+            with ctx_noparamgrad_and_eval(net):
+                perturbed_data = adversary.perturb(b_data, b_label)
+            logits = net(perturbed_data)
+            loss = criterion(logits, b_label)
+        else:
+            # -------- feed clean data to the network
+            logits = net(b_data)
+            loss = criterion(logits, b_label)
+
         # -------- backprop. & update
+        optim.zero_grad()
         loss.backward()
         optim.step()
 
-        if args.adv_train and epoch >= args.adv_delay:
-            # -------- training with adversarial examples
-            net.eval()
-            perturbed_data = pgd_attack(net, b_data, b_label, eps=0.031, alpha=0.01, iters=7)
-            net.train()
+        # -------- update info
+        loss = loss.float()
+        losses.update(loss.item(), b_data.size(0))
+        # ----
+        batch_time.update(time.time()-end)
+        end = time.time()
 
-            logits_adv = net(perturbed_data)
-            loss_adv = criterion(logits_adv, b_label)
-            running_loss_tr_adv = running_loss_tr_adv + reduce_tensor(loss_adv.data).item()
+    print('Epoch %d costs %fs :'%(epoch, batch_time.sum))
 
-            # -------- print info. at the last epoch
-            if args.local_rank == 0 and batch_idx == (len(trainloader)-1):
-                avg_loss_tr_adv = running_loss_tr_adv / len(trainloader)
-
-                # -------- record
-                writer.add_scalar('loss-train-adv', avg_loss_tr_adv, epoch)
-
-                # -------- print in terminal
-                print('Epoch %d/%d ADVERSARIAL samples:'%(epoch, args.epochs))
-                print('     CROSS ENTROPY loss = %f.'%avg_loss_tr_adv)
-
-            # -------- backprop. & update again
-            optim.zero_grad()
-            loss_adv.backward()
-            optim.step()
-
+    # -------- record & print in terminal
+    trainstats = {}
+    trainstats['loss'] = losses.avg
+    if args.adv_train:
+        print('     CROSS ENTROPY loss on ADV.  TRAIN = %f.'%(losses.avg))
+    else:
+        print('     CROSS ENTROPY loss on CLEAN TRAIN = %f.'%(losses.avg))
+    writer.add_scalars('trainstats', trainstats, epoch)
+        
     return
 
 # ======== evaluate model ========
-def val(net, trainloader, testloader):
+def val(net, dataloader):
     
     net.eval()
-    
-    correct_train = 0
-    correct_test = 0
-    
+    top1 = AverageMeter()
+        
+    # clean
     with torch.no_grad():
         
         # -------- compute the accs. of train, test set
-        for test in testloader:
+        for _, test in enumerate(dataloader):
             images, labels = test
             images, labels = images.cuda(), labels.cuda()
             
-            logits = net(images)
-            logits = logits.detach()
-            _, predicted = torch.max(logits.data, 1)
+            logits = net(images).detach().float()
+
+            prec1 = accuracy(logits.data, labels)[0]
+            top1.update(prec1.item(), images.size(0))
             
-            correct_test += (predicted == labels).sum().item()
-        
-        for train in trainloader:
-            images, labels = train
-            images, labels = images.cuda(), labels.cuda()
-            
-            logits = net(images)
-            logits = logits.detach()
-            _, predicted = torch.max(logits.data, 1)
-            
-            correct_train += (predicted == labels).sum().item()  
-  
-    return correct_train, correct_test
+    return top1.avg
+
 
 
 # ======== startpoint
