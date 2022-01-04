@@ -54,11 +54,17 @@ parser.add_argument('--test_step', default=20, type=int, help='itertion number o
 parser.add_argument('--test_gamma', default=2., type=float, help='step size of attack during testing')
 args = parser.parse_args()
 
-# ======== log writer init ======
+# ======== log writer init. ========
 if args.adv_train == True:
     writer = SummaryWriter(os.path.join(args.logs_dir,args.dataset,args.arch+'-adv/'))
+    if not os.path.exists(os.path.join(args.model_dir,args.dataset,args.arch+'-adv')):
+        os.makedirs(os.path.join(args.model_dir,args.dataset,args.arch+'-adv'))
+        args.save_path = os.path.join(args.model_dir,args.dataset,args.arch+'-adv')
 else:
     writer = SummaryWriter(os.path.join(args.logs_dir,args.dataset,args.arch+'/'))
+    if not os.path.exists(os.path.join(args.model_dir,args.dataset,args.arch)):
+        os.makedirs(os.path.join(args.model_dir,args.dataset,args.arch))
+        args.save_path = os.path.join(args.model_dir,args.dataset,args.arch)
 
 # -------- main function
 def main():
@@ -112,16 +118,10 @@ def main():
         scheduler.step()
 
         # -------- save model & print info
-        if not os.path.exists(os.path.join(args.model_dir,args.dataset,args.arch)):
-            os.makedirs(os.path.join(args.model_dir,args.dataset,args.arch))
-
         if (epoch == 1 or epoch % args.save_freq == 0 or epoch == args.epochs):
             checkpoint = {'state_dict': net.state_dict()}
-            if args.adv_train:
-                args.model_path = 'epoch%d'%epoch+'-adv.pth'
-            else:
-                args.model_path = 'epoch%d'%epoch+'.pth'
-            torch.save(checkpoint, os.path.join(args.model_dir,args.dataset,args.arch,args.model_path))
+            args.model_path = 'epoch%d'%epoch+'.pth'
+            torch.save(checkpoint, os.path.join(args.save_path,args.model_path))
 
         # -------- print info.
         print('Current training %s on data set %s.'%(args.arch, args.dataset))
