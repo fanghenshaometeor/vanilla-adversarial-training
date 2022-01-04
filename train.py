@@ -92,7 +92,7 @@ def main():
 
         # -------- train
         print('Training(%d/%d)...'%(epoch, args.epochs))
-        train_epoch(net, trainloader, optimizer, criterion, epoch, args)
+        train_epoch(net, trainloader, optimizer, criterion, epoch)
 
         # -------- validation
         print('Validating...')
@@ -125,7 +125,7 @@ def main():
     
 
 # ======== train  model ========
-def train_epoch(net, trainloader, optim, criterion, epoch, args):
+def train_epoch(net, trainloader, optim, criterion, epoch):
     
     net.train()
         
