@@ -84,15 +84,13 @@ def cifar100_dataloaders(data_dir, batch_size=256):
           transforms.ToTensor(),
      ])
 
-     train_set = Subset(CIFAR100(data_dir, train=True, transform=train_transform, download=True), list(range(45000)))
-     val_set = Subset(CIFAR100(data_dir, train=True, transform=test_transform, download=True), list(range(45000, 50000)))
+     train_set = CIFAR100(data_dir, train=True, transform=train_transform, download=True)
      test_set = CIFAR100(data_dir, train=False, transform=test_transform, download=True)
 
      train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True, num_workers=8, pin_memory=True)
-     val_loader = DataLoader(val_set, batch_size=batch_size, shuffle=False, num_workers=8, pin_memory=True)
      test_loader = DataLoader(test_set, batch_size=batch_size, shuffle=False, num_workers=8, pin_memory=True)
 
-     return train_loader, val_loader, test_loader
+     return train_loader, test_loader
 
 def tiny_imagenet_dataloaders(batch_size=128, num_workers=2, data_dir = 'datasets/tiny-imagenet-200', permutation_seed=10):
 
