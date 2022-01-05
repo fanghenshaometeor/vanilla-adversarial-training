@@ -2,7 +2,9 @@
 
 This repo provides the PyTorch code for both **vanilla** training and **adversarial** training deep neural networks.
 
-## File Descriptions
+## What
+
+A brief description for the files in this repo:
 
 `train.py,.sh` : training python and shell scripts
 
@@ -11,6 +13,28 @@ This repo provides the PyTorch code for both **vanilla** training and **adversar
 `utils.py` : utility functions
 
 `model/` : model definitions directory
+
+## How
+
+A brief description on how to train and attack the model.
+
+### Training
+
+To reproduce the training, users can run the `train.sh` shell scripts directly on the command line.
+```
+sh train.sh
+```
+
+Detailed training settings (model architecture, data set and whether to perform adversarial training) could be specified freely in the `train.sh` script.
+
+### Attack
+
+To attack the model, users can run the `attack.sh` shell scripts directly on the command line.
+```
+sh attack.sh
+```
+
+Detailed attacking settings could be specified freely by commenting some lines in the `attack.sh` script.
 
 <!-- ## Results
 
