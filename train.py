@@ -59,12 +59,12 @@ if args.adv_train == True:
     writer = SummaryWriter(os.path.join(args.logs_dir,args.dataset,args.arch+'-adv/'))
     if not os.path.exists(os.path.join(args.model_dir,args.dataset,args.arch+'-adv')):
         os.makedirs(os.path.join(args.model_dir,args.dataset,args.arch+'-adv'))
-        args.save_path = os.path.join(args.model_dir,args.dataset,args.arch+'-adv')
+    args.save_path = os.path.join(args.model_dir,args.dataset,args.arch+'-adv')
 else:
     writer = SummaryWriter(os.path.join(args.logs_dir,args.dataset,args.arch+'/'))
     if not os.path.exists(os.path.join(args.model_dir,args.dataset,args.arch)):
         os.makedirs(os.path.join(args.model_dir,args.dataset,args.arch))
-        args.save_path = os.path.join(args.model_dir,args.dataset,args.arch)
+    args.save_path = os.path.join(args.model_dir,args.dataset,args.arch)
 
 # -------- main function
 def main():
@@ -105,15 +105,16 @@ def main():
         train_epoch(net, trainloader, optimizer, criterion, epoch, adversary)
 
         # -------- validation
-        print('Validating...')
-        acc_te = val(net, testloader)
-        acc_tr = val(net, trainloader)
+        if (epoch == 1 or epoch % args.save_freq == 0 or epoch == args.epochs):
+            print('Validating...')
+            acc_te = val(net, testloader)
+            acc_tr = val(net, trainloader)
 
-        # ---- record
-        valacc = {}
-        valacc['train'], valacc['test'] = acc_tr, acc_te
-        writer.add_scalars('valacc', valacc, epoch)
-        print('     Train/Test accuracy = %.2f/%.2f.'%(acc_tr, acc_te))
+            # ---- record
+            valacc = {}
+            valacc['train'], valacc['test'] = acc_tr, acc_te
+            writer.add_scalars('valacc', valacc, epoch)
+            print('     Train/Test accuracy = %.2f/%.2f.'%(acc_tr, acc_te))
         
         scheduler.step()
 
