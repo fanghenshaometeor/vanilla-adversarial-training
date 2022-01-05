@@ -73,6 +73,7 @@ def cifar10_dataloaders(data_dir, batch_size=256):
 
 def cifar100_dataloaders(data_dir, batch_size=256):
 
+     batch_size=128
      train_transform = transforms.Compose([
           transforms.RandomCrop(32, padding=4),
           transforms.RandomHorizontalFlip(),
