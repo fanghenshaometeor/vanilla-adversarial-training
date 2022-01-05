@@ -16,6 +16,7 @@ import vgg
 import resnet
 import resnet_v1
 import preactresnet
+import wideresnet
 
 
 from torch.utils.data import DataLoader, Subset
@@ -165,7 +166,8 @@ def get_model(args):
 
      elif 'vgg' in args.arch:
           net = vgg.__dict__[args.arch](num_classes=num_class)
-          
+     elif 'wrn' in args.arch:
+          net = wideresnet.__dict__[args.arch](num_classes=num_class)
      else:
           assert False, "Unknown model : {}".format(args.arch)
 

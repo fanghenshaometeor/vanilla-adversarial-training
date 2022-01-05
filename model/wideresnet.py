@@ -2,6 +2,7 @@ import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from advertorch.utils import NormalizeByChannelMeanStd
 
 class BasicBlock(nn.Module):
     def __init__(self, in_planes, out_planes, stride, drop_rate=0.0):
@@ -95,7 +96,12 @@ class WideResNet(nn.Module):
             elif isinstance(mod, nn.Linear):
                 mod.bias.data.zero_()
 
+        # default normalization is for CIFAR10
+        self.normalize = NormalizeByChannelMeanStd(
+            mean=[0.4914, 0.4822, 0.4465], std=[0.2470, 0.2435, 0.2616])
+
     def forward(self, x):
+        x = self.normalize(x)
         out = self.conv1(x)
         out = self.convgroup1(out)
         out = self.convgroup2(out)
@@ -107,8 +113,12 @@ class WideResNet(nn.Module):
         return out
 
 
-def wrn28(widen_factor, num_classes):
-    model = WideResNet(28, num_classes, widen_factor)
+def wrn28x5(num_classes):
+    model = WideResNet(28, num_classes, widen_factor=5)
+    return model
+
+def wrn28x10(num_classes):
+    model = WideResNet(28, num_classes, widen_factor=10)
     return model
 
 def wrn34(widen_factor, num_classes):
