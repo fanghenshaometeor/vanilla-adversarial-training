@@ -82,7 +82,7 @@ def main():
         print('-------- ADVERSARY INFORMATION --------')
         print('---- PGD attack with %d/255 step size, %d iterations and bound %d/255.'%(args.test_gamma*255, args.test_step, args.test_eps*255))
         # --------
-        acc_attack = attack(net, testloader, args)
+        acc_attack = attack(net, testloader)
         print('Attacked PGD acc. = %.2f'%acc_attack)
     
     elif args.attack_type == 'fgsm':
@@ -90,7 +90,7 @@ def main():
         print('-------- ADVERSARY INFORMATION --------')
         print('---- FGSM attack with bound %d/255.'%(args.test_eps*255))
         # --------
-        acc_attack = attack(net, testloader, args)
+        acc_attack = attack(net, testloader)
         print('Attacked FGSM acc. = %.2f'%acc_attack)
 
     print('-------- FINISHED.')
@@ -120,7 +120,7 @@ def val(net, dataloader):
 
 
 # -------- attack model --------
-def attack(net, testloader, args):
+def attack(net, testloader):
 
     net.eval()
     top1 = AverageMeter()
