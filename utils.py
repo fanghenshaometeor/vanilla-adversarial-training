@@ -93,6 +93,21 @@ def cifar100_dataloaders(data_dir, batch_size=256):
 
      return train_loader, test_loader
 
+def svhn_dataloaders(data_dir, batch_size=256):
+
+     transform = transforms.Compose([
+          transforms.ToTensor()
+     ])
+     train_set = datasets.SVHN(root=data_dir, split='train', download=True, 
+                         transform=transform)
+     test_set = datasets.SVHN(root=data_dir, split='test', download=True, 
+                         transform=transform)
+
+     train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True, num_workers=8, pin_memory=True)
+     test_loader = DataLoader(test_set, batch_size=batch_size, shuffle=False, num_workers=8, pin_memory=True)
+
+     return train_loader, test_loader
+
 def tiny_imagenet_dataloaders(batch_size=128, num_workers=2, data_dir = 'datasets/tiny-imagenet-200', permutation_seed=10):
 
     train_transform = transforms.Compose([
@@ -128,6 +143,9 @@ def get_datasets(args):
      elif args.dataset == 'CIFAR100':
           return cifar100_dataloaders(data_dir=args.data_dir, batch_size=args.batch_size)
 
+     elif args.dataset == 'SVHN':
+          return svhn_dataloaders(data_dir=args.data_dir, batch_size=args.batch_size)
+
      elif args.dataset == 'TinyImagenet':
           return tiny_imagenet_dataloaders(batch_size=args.batch_size, num_workers=args.workers, permutation_seed=args.randomseed)
      else:
@@ -148,6 +166,11 @@ def get_model(args):
           num_class = 100
           dataset_normalization = NormalizeByChannelMeanStd(
                mean=[0.5071, 0.4865, 0.4409], std=[0.2673, 0.2564, 0.2762])
+     
+     elif args.dataset == 'SVHN':
+          num_class = 10
+          dataset_normalization = NormalizeByChannelMeanStd(
+               mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
 
      elif args.dataset == 'TinyImagenet':
           num_class = 200
