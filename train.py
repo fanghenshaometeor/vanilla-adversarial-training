@@ -87,7 +87,11 @@ def main():
     # ======== set criterions & optimizers
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(net.parameters(), lr=args.lr_base, momentum=0.9, weight_decay=5e-4)
-    scheduler = optim.lr_scheduler.MultiStepLR(optimizer, [60,120,160], gamma=0.1)
+    if args.arch == 'wrn34x10':
+        args.epochs = 100
+        scheduler = optim.lr_scheduler.MultiStepLR(optimizer, [75, 90], gamma=0.1)
+    else:
+        scheduler = optim.lr_scheduler.MultiStepLR(optimizer, [60,120,160], gamma=0.1)
 
     # ======== 
     args.train_eps /= 255.

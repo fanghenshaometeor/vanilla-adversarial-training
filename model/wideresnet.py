@@ -121,8 +121,8 @@ def wrn28x10(num_classes):
     model = WideResNet(28, num_classes, widen_factor=10)
     return model
 
-def wrn34(widen_factor, num_classes):
-    model = WideResNet(34, num_classes, widen_factor)
+def wrn34x10(num_classes):
+    model = WideResNet(34, num_classes, widen_factor=10)
     return model
 
 # if __name__ == '__main__':
