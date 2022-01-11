@@ -11,6 +11,7 @@ import torch
 import torch.nn as nn
 
 import os
+import sys
 import ast
 import time
 import argparse
@@ -20,7 +21,7 @@ import numpy as np
 from utils import setup_seed, get_parameter_number
 from utils import get_datasets, get_model
 from utils import AverageMeter, accuracy
-from utils import get_net_param_vec
+from utils import Logger
 
 from advertorch.attacks import GradientSignAttack
 from advertorch.attacks import LinfPGDAttack
@@ -32,6 +33,7 @@ torch.set_default_tensor_type(torch.FloatTensor)
 parser = argparse.ArgumentParser(description='Attack Deep Neural Networks')
 # -------- file param. --------------
 parser.add_argument('--data_dir',type=str,default='/media/Disk1/KunFang/data/CIFAR10/',help='file path for data')
+parser.add_argument('--output_dir',type=str,default='./output/',help='folder to store output')
 parser.add_argument('--dataset',type=str,default='CIFAR10',help='data set name')
 parser.add_argument('--arch',type=str,default='vgg16',help='model architecture')
 parser.add_argument('--model_path',type=str,default='./save/CIFAR10-VGG.pth',help='saved model path')
@@ -43,6 +45,19 @@ parser.add_argument('--test_step', default=20, type=int, help='itertion number o
 parser.add_argument('--test_gamma', default=2., type=float, help='step size of attack during testing')
 parser.add_argument('--attack_type',type=str,default='fgsm',help='attack method')
 args = parser.parse_args()
+
+# -------- initialize output store dir.
+if 'adv' in args.model_path:
+    if not os.path.exists(os.path.join(args.output_dir,args.dataset,args.arch+'-adv')):
+        os.makedirs(os.path.join(args.output_dir,args.dataset,args.arch+'-adv'))
+    args.output_path = os.path.split(args.model_path)[-1].replace(".pth", "-"+args.attack_type.upper()+".log")
+    args.output_path = os.path.join(args.output_dir,args.dataset,args.arch+'-adv',args.output_path)
+else:
+    if not os.path.exists(os.path.join(args.output_dir,args.dataset,args.arch)):
+        os.makedirs(os.path.join(args.output_dir,args.dataset,args.arch))
+    args.output_path = os.path.split(args.model_path)[-1].replace(".pth", "-"+args.attack_type.upper()+".log")
+    args.output_path = os.path.join(args.output_dir,args.dataset,args.arch,args.output_path)
+sys.stdout = Logger(filename=args.output_path,stream=sys.stdout)
 
 
 # -------- main function

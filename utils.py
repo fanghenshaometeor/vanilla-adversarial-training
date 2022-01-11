@@ -242,3 +242,19 @@ def get_net_param_vec(net):
                net_vec.append(param.detach().cpu().numpy())
           net_vec = np.concatenate(net_vec, 0)
      return net_vec
+
+########################################################################################################
+########################################################################################################
+########################################################################################################
+
+class Logger(object):
+     def __init__(self, filename='default.log', stream=sys.stdout):
+          self.terminal = stream
+          self.log = open(filename, 'a')
+     
+     def write(self, message):
+          self.terminal.write(message)
+          self.log.write(message)
+
+     def flush(self):
+          pass
