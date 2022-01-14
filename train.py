@@ -42,8 +42,8 @@ parser.add_argument('--dataset',type=str,default='CIFAR10',help='data set name')
 parser.add_argument('--arch',type=str,default='vgg16',help='model architecture')
 # -------- training param. ----------
 parser.add_argument('--batch_size',type=int,default=256,help='batch size for training (default: 256)')    
-parser.add_argument('--lr_base',type=float,default=0.1,help='learning rate (default: 0.05)')
-parser.add_argument('--epochs',type=int,default=100,help='number of epochs to train (default: 200)')
+parser.add_argument('--lr_base',type=float,default=0.1,help='learning rate (default: 0.1)')
+parser.add_argument('--epochs',type=int,default=100,help='number of epochs to train (default: 100)')
 parser.add_argument('--save_freq',type=int,default=20,help='model save frequency (default: 20 epoch)')
 # -------- enable adversarial training --------
 parser.add_argument('--adv_train',type=ast.literal_eval,dest='adv_train',help='enable the adversarial training')
