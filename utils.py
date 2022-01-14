@@ -12,9 +12,6 @@ import os
 import sys
 
 sys.path.append("model")
-import vgg
-import resnet
-import resnet_v1
 import preactresnet
 import wideresnet
 
@@ -180,14 +177,6 @@ def get_model(args):
      if args.arch == 'preactresnet18':
           net = preactresnet.__dict__[args.arch](num_classes=num_class)
 
-     elif args.arch == 'resnet18':
-          net = resnet.__dict__[args.arch](num_class=num_class)
-     
-     elif args.arch == 'resnet20':
-          net = resnet_v1.__dict__[args.arch](num_class=num_class)
-
-     elif 'vgg' in args.arch:
-          net = vgg.__dict__[args.arch](num_classes=num_class)
      elif 'wrn' in args.arch:
           net = wideresnet.__dict__[args.arch](num_classes=num_class)
      else:
@@ -233,15 +222,6 @@ def accuracy(output, target, topk=(1,)):
         correct_k = correct[:k].view(-1).float().sum(0)
         res.append(correct_k.mul_(100.0 / batch_size))
     return res
-
-def get_net_param_vec(net):
-     net_vec = []
-     with torch.no_grad():
-          for _, param in net.named_parameters():
-               param = param.view(-1)
-               net_vec.append(param.detach().cpu().numpy())
-          net_vec = np.concatenate(net_vec, 0)
-     return net_vec
 
 ########################################################################################################
 ########################################################################################################
