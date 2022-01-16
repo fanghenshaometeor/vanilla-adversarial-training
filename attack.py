@@ -5,6 +5,7 @@ Created on Mon Mar 09 2020
 """
 
 from __future__ import print_function
+from tabnanny import check
 
 
 import torch
@@ -82,6 +83,8 @@ def main():
     print('---- saved path  : '+args.model_path)
     print('---- # of param  : ')
     print('---- ', get_parameter_number(net))
+    if 'best' in args.model_path:
+        print('---- best robust acc. achieved at epoch-%d.'%checkpoint['best-epoch'])
     
     args.test_eps /= 255.
     args.test_gamma /= 255.
