@@ -26,6 +26,9 @@ from utils import Logger
 
 from advertorch.attacks import GradientSignAttack
 from advertorch.attacks import LinfPGDAttack
+from advertorch.attacks import CarliniWagnerL2Attack
+
+from autoattack import AutoAttack
 
 # ======== fix data type ========
 torch.set_default_tensor_type(torch.FloatTensor)
@@ -110,6 +113,22 @@ def main():
         # --------
         acc_attack = attack(net, testloader)
         print('Attacked FGSM acc. = %.2f'%acc_attack)
+    
+    elif args.attack_type == 'cw':
+        print('-------- START ATTACKING --------')
+        print('-------- ADVERSARY INFORMATION --------')
+        print('---- C&W attack with default settings in AdverTorch.')
+        # --------
+        acc_attack = attack(net, testloader)
+        print('Attacked C&W acc. = %.2f'%acc_attack)
+    
+    elif args.attack_type == 'square':
+        print('-------- START ATTACKING --------')
+        print('-------- ADVERSARY INFORMATION --------')
+        print('---- SQUARE attack with default settings in AutoAttack.')
+        # --------
+        acc_attack = attack(net, testloader)
+        print('Attacked SQUARE acc. = %.2f'%acc_attack)
 
     print('-------- FINISHED.')
     return
@@ -147,13 +166,21 @@ def attack(net, testloader):
         adversary = LinfPGDAttack(net, loss_fn=nn.CrossEntropyLoss(), eps=args.test_eps, nb_iter=args.test_step, eps_iter=args.test_gamma, rand_init=True, clip_min=0.0, clip_max=1.0, targeted=False)
     elif args.attack_type == 'fgsm':
         adversary = GradientSignAttack(net, loss_fn=nn.CrossEntropyLoss(), eps=args.test_eps, clip_min=0.0, clip_max=1.0, targeted=False)
+    elif args.attack_type == 'cw':
+        adversary = CarliniWagnerL2Attack(net, num_classes=args.num_classes)
+    elif args.attack_type == 'square':
+        adversary = AutoAttack(net, norm='Linf', eps=args.test_eps, version='standard')
+        adversary.attacks_to_run = ['square']
 
     for test in testloader:
         image, label = test
         image, label = image.cuda(), label.cuda()
 
         # generate adversarial examples
-        perturbed_image = adversary.perturb(image, label)
+        if args.attack_type == 'square':
+            perturbed_image = adversary.run_standard_evaluation(image, label, bs=image.size(0))
+        else:
+            perturbed_image = adversary.perturb(image, label)
 
         # re-classify
         logits = net(perturbed_image).detach().float()

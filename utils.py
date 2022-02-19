@@ -154,30 +154,30 @@ def get_datasets(args):
 
 def get_model(args):
      if args.dataset == 'CIFAR10':
-          num_class = 10
+          args.num_classes = 10
           dataset_normalization = NormalizeByChannelMeanStd(
                mean=[0.4914, 0.4822, 0.4465], std=[0.2470, 0.2435, 0.2616])
 
      elif args.dataset == 'CIFAR100':
-          num_class = 100
+          args.num_classes = 100
           dataset_normalization = NormalizeByChannelMeanStd(
                mean=[0.5071, 0.4865, 0.4409], std=[0.2673, 0.2564, 0.2762])
      
      elif args.dataset == 'SVHN':
-          num_class = 10
+          args.num_classes = 10
           dataset_normalization = NormalizeByChannelMeanStd(
                mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
 
      elif args.dataset == 'TinyImagenet':
-          num_class = 200
+          args.num_classes = 200
           dataset_normalization = NormalizeByChannelMeanStd(
                mean=[0.4802, 0.4481, 0.3975], std=[0.2302, 0.2265, 0.2262])
 
      if args.arch == 'preactresnet18':
-          net = preactresnet.__dict__[args.arch](num_classes=num_class)
+          net = preactresnet.__dict__[args.arch](num_classes=args.num_classes)
 
      elif 'wrn' in args.arch:
-          net = wideresnet.__dict__[args.arch](num_classes=num_class)
+          net = wideresnet.__dict__[args.arch](num_classes=args.num_classes)
      else:
           assert False, "Unknown model : {}".format(args.arch)
 
